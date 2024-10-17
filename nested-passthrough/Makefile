@@ -135,6 +135,7 @@ endif
 	$(info Deploying RHEL AI on RHOSO)
 	@eval $$(crc oc-env) && \
 	oc cp scripts/edpm-deploy-rhel-ai.sh openstackclient:/tmp/ && \
+	oc cp $(PULL_SECRET) openstackclient:/home/cloud-admin/pull-secret && \
 	oc rsh openstackclient bash -c "NUM_GPUS=$(AI_NUM_GPUS) VM_NAME=$(AI_VM_NAME) CPUS=$(AI_CPUS) RAM=$$((1024*$(AI_RAM))) DISK=$(AI_DISK) /tmp/edpm-deploy-rhel-ai.sh"
 	@scripts/http-serve.sh stop
 

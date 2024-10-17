@@ -102,4 +102,9 @@ timeout 120 bash -c "while true; do if ping -c1 -i1 $fip &>/dev/null; then echo 
 echo "Changing the default DNS nameserver in the instance to 1.1.1.1"
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${fip} 'echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf'
 
+if [[ -e ~/pull-secret ]]; then
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${fip} 'mkdir ~/.docker'
+    scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem ~/pull-secret cloud-user@${fip}:~/.docker/config.json
+fi
+
 echo "Access VM with: oc rsh openstackclient ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${fip}"

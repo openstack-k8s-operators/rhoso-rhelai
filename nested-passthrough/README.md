@@ -66,6 +66,32 @@ $ AI_IMAGE_URL=https://access.cdn.redhat.com/.../rhel-ai-nvidia-1.2-1728670729-x
   make deploy_rhel_ai
 ```
 
+## Using RHEL AI
+
+At the end of `make deploy_rhel_ai` you should have seen a message like this
+one (with a different IP address):
+
+```
+Access VM with: oc rsh openstackclient ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./rhel-ai.pem cloud-user@192.168.122.209
+```
+
+Now from your host you can run that command and you should be in the rhel-ai
+machine.
+
+It is time to proceed with the [RHEL AI configuration process](
+https://docs.redhat.com/en/documentation/red_hat_enterprise_linux_ai/1.2/html/building_your_rhel_ai_environment).
+
+And finally we can [start creating a custom LLM](
+https://docs.redhat.com/en/documentation/red_hat_enterprise_linux_ai/1.2/html/creating_a_custom_llm_using_rhel_ai).
+
+**Note:** At least for the trial you will need to create an [Insights
+activation key](https://console.redhat.com/insights/connector/activation-keys)
+and activate your system with `rhc connect --organization <org id>
+--activation-key <created key>`.
+
+**Note:** There should be no need to login to the registry, as the RHEL AI VM
+will have your pull-secret already set for access.
+
 # Customization
 
 There should be reasonable defaults, but you can still configuration a number
@@ -96,6 +122,7 @@ the different phases.  This is a non-exhaustive list:
   - AI_CPUS
   - AI_RAM
   - AI_DISK
+  - PULL_SECRET
 
   For example, if we have more resources, and the secret is not located on the
   home directory, you may use something like this:
