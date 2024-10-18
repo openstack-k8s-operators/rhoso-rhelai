@@ -17,7 +17,7 @@ CRC_VERSION ?= 2.41.0
 
 # Reasonable defaults for CRC CPU, DISK, and RAM
 CRC_CPUS ?= 12
-CRC_MEMORY ?= 24576
+CRC_RAM ?= 24
 CRC_DISK ?= 100
 
 EDPM_CPUS ?= 28
@@ -83,7 +83,7 @@ endif
 .PHONY: deploy_controlplane
 deploy_controlplane: ## Deploy OCP cluster using CRC, deploy OSP operators, and deploy the OpenStack Control Plane
 	@echo Deploying OCP using CRC && \
-	CRC_VERSION=$(CRC_VERSION) PULL_SECRET=$$(realpath $(PULL_SECRET)) CPUS=$(CRC_CPUS) MEMORY=$(CRC_MEMORY) DISK=$(CRC_DISK) make -C $(INSTALL_YAMLS_DIR)/devsetup crc crc_attach_default_interface && \
+	CRC_VERSION=$(CRC_VERSION) PULL_SECRET=$$(realpath $(PULL_SECRET)) CPUS=$(CRC_CPUS) MEMORY=$$((1024*$(CRC_RAM))) DISK=$(CRC_DISK) make -C $(INSTALL_YAMLS_DIR)/devsetup crc crc_attach_default_interface && \
 	echo Deploying RHOSO operators && \
 	eval $$(crc oc-env) && \
 	NNCP_TIMEOUT=$(TIMEOUT_OPERATORS) TIMEOUT=$(TIMEOUT_OPERATORS) make -C $(INSTALL_YAMLS_DIR) crc_storage openstack_wait && \

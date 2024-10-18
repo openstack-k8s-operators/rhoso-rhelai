@@ -103,14 +103,14 @@ the different phases.  This is a non-exhaustive list:
   - TIMEOUT_OPERATORS
   - TIMEOUT_CTRL
   - CRC_CPUS
-  - CRC_MEMORY
+  - CRC_RAM: In GiB
   - CRC_DISK
   - DEPLOY_CINDER
   - CRC_VERSION
 
 - For the edpm node:
   - EDPM_CPUS
-  - EDPM_RAM
+  - EDPM_RAM: In GiB
   - EDPM_DISK
   - GPU_VENDOR_ID
   - GPU_PRODUCT_ID
@@ -121,7 +121,7 @@ the different phases.  This is a non-exhaustive list:
   - AI_NUM_GPUS
   - AI_VM_NAME
   - AI_CPUS
-  - AI_RAM
+  - AI_RAM: In GiB
   - AI_DISK
   - PULL_SECRET
 
