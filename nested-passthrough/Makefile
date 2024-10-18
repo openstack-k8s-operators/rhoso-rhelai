@@ -82,13 +82,18 @@ endif
 	@eval $$(crc oc-env) && \
 	oc kustomize ./out/ctlplane > ./out/openstack-deployment.yaml
 
+.PHONY: create_storage
+create_storage:
+	@NNCP_TIMEOUT=$(TIMEOUT_OPERATORS) TIMEOUT=$(TIMEOUT_OPERATORS) make -C $(INSTALL_YAMLS_DIR) crc_storage openstack_wait
+
+# Create storage sometime fails, so we repeat it once on failure
 .PHONY: deploy_controlplane
 deploy_controlplane: ## Deploy OCP cluster using CRC, deploy OSP operators, and deploy the OpenStack Control Plane
 	@echo Deploying OCP using CRC && \
 	CRC_VERSION=$(CRC_VERSION) PULL_SECRET=$$(realpath $(PULL_SECRET)) CPUS=$(CRC_CPUS) MEMORY=$$((1024*$(CRC_RAM))) DISK=$(CRC_DISK) make -C $(INSTALL_YAMLS_DIR)/devsetup crc crc_attach_default_interface && \
 	echo Deploying RHOSO operators && \
 	eval $$(crc oc-env) && \
-	NNCP_TIMEOUT=$(TIMEOUT_OPERATORS) TIMEOUT=$(TIMEOUT_OPERATORS) make -C $(INSTALL_YAMLS_DIR) crc_storage openstack_wait && \
+	( $(MAKE) create_storage || $(MAKE) create_storage ) && \
 	oc label node --all openstack.org/cinder-lvm= && \
 	$(MAKE) prepare_controlplane_config && \
 	echo Deploying RHOSO control plane && \
