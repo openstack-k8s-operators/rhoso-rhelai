@@ -22,6 +22,15 @@ patches:
     name: openstack
   patch: |-
     - op: replace
+      path: /spec/nova/template/apiServiceTemplate/customServiceConfig
+      value: |
+        [pci]
+        alias = { "vendor_id":"${VENDOR_ID}", "product_id":"${PRODUCT_ID}", "device_type":"type-PCI", "name":"nvidia", "numa_policy":"preferred" }
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    - op: replace
       path: /spec/manila/enabled
       value: false
 - target:
@@ -36,7 +45,12 @@ patches:
     name: openstack
   patch: |-
     - op: replace
-      path: /spec/nova/template/apiServiceTemplate/customServiceConfig
-      value: |
-        [pci]
-        alias = { "vendor_id":"${VENDOR_ID}", "product_id":"${PRODUCT_ID}", "device_type":"type-PCI", "name":"nvidia", "numa_policy":"preferred" }
+      path: /spec/swift/enabled
+      value: false
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    - op: replace
+      path: /spec/barbican/enabled
+      value: false

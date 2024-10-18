@@ -77,8 +77,10 @@ ifeq ($(GPU_PRODUCT_ID),)
 endif
 	$(info Using GPU product ID $(GPU_PRODUCT_ID) (can be changed using GPU_PRODUCT_ID env var))
 	$(info Generating the OpenStackControlPlane manifest)
-	@sed 's/$${VENDOR_ID}/$(GPU_VENDOR_ID)/g;s/$${PRODUCT_ID}/$(GPU_PRODUCT_ID)/g' $(KUSTOMIZE_TEMPLATE) > out/kustomization.yaml
-	@eval $$(crc oc-env); oc kustomize ./out > ./out/openstack-deployment.yaml
+	@mkdir -p out/ctlplane
+	@sed 's/$${VENDOR_ID}/$(GPU_VENDOR_ID)/g;s/$${PRODUCT_ID}/$(GPU_PRODUCT_ID)/g' $(KUSTOMIZE_TEMPLATE) > out/ctlplane/kustomization.yaml
+	@eval $$(crc oc-env) && \
+	oc kustomize ./out/ctlplane > ./out/openstack-deployment.yaml
 
 .PHONY: deploy_controlplane
 deploy_controlplane: ## Deploy OCP cluster using CRC, deploy OSP operators, and deploy the OpenStack Control Plane
