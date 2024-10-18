@@ -42,6 +42,10 @@ NOVA_CFG_TEMPLATE := templates/nova-compute.conf
 
 INSTALL_YAMLS_DIR ?= out/install_yamls
 
+# When cleaning up the EDPM we would normally cleanup nicely, but if OCP is
+# down we would do it more forcefully
+OCP_DOWN ?= false
+
 .PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -149,9 +153,9 @@ cleanup_controlplane: ## Delete the OCP cluster
 .PHONY: cleanup_edpm
 cleanup_edpm: ## Delete the eDPM node
 	@eval $$(crc oc-env) && \
-	OUTPUT_DIR=$$(realpath ./out/) make -C $(INSTALL_YAMLS_DIR) edpm_deploy_cleanup && \
+	( [[ "$(OCP_DOWN)" == "true" ]] || OUTPUT_DIR=$$(realpath ./out/) make -C $(INSTALL_YAMLS_DIR) edpm_deploy_cleanup ) && \
 	OUTPUT_DIR=$$(realpath ./out/) make -C $(INSTALL_YAMLS_DIR)/devsetup edpm_compute_cleanup && \
-	oc rsh openstackclient bash -c 'openstack network agent list --host edpm-compute-0.ctlplane.example.com -c ID -f value | xargs openstack network agent delete'
+	( [[ "$(OCP_DOWN)" == "true" ]] || oc rsh openstackclient bash -c 'openstack network agent list --host edpm-compute-0.ctlplane.example.com -c ID -f value | xargs openstack network agent delete' )
 
 .PHONY: cleanup_rhel_ai
 cleanup_rhel_ai: ## Delete the RHEL AI instance running in RHOSO

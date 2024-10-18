@@ -115,6 +115,7 @@ the different phases.  This is a non-exhaustive list:
   - GPU_VENDOR_ID
   - GPU_PRODUCT_ID
   - TIMEOUT_EDPM
+  - OCP_DOWN
 
 - For RHEL AI
   - AI_NUM_GPUS
