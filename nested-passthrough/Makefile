@@ -96,6 +96,7 @@ deploy_controlplane: ## Deploy OCP cluster using CRC, deploy OSP operators, and 
 	( $(MAKE) create_storage || $(MAKE) create_storage ) && \
 	oc label node --all openstack.org/cinder-lvm= && \
 	$(MAKE) prepare_controlplane_config && \
+	sleep 60 && \
 	echo Deploying RHOSO control plane && \
 	OPENSTACK_CR=$$(realpath ./out/openstack-deployment.yaml) make -C $(INSTALL_YAMLS_DIR) openstack_deploy && \
 	echo Waiting for control plane to be ready && \
