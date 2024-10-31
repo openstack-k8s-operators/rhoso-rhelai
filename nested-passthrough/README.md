@@ -54,6 +54,43 @@ $ sudo grubby --update-kernel ALL --args 'intel_iommu=on iommu=pt'
 We don't want the nvidia driver to hold our PCI devices, or they won't be
 available for PCI passthrough.
 
+There are a couple of ways to do this:
+
+- Blacklist the driver
+- Reserve the PCI devices for vfio
+
+We can do one of them or even both  ;-)
+
+##### Blacklist the driver
+
+We need to write `blacklist <driver name>` in file
+`/etc/modprobe.d/blacklist.conf`.
+
+Depending on the card it will be a different driver name:
+
+- For NVIDIA GPUs:
+
+```
+$ echo -e "blacklist nouveau\nblacklist nvidia*" | sudo tee -a /etc/modprobe.d/blacklist.conf
+```
+
+- For AMD GPUs:
+
+```
+$ echo -e "blacklist amdgpu\nblacklist radeon" | sudo tee -a /etc/modprobe.d/blacklist.conf
+```
+
+- For Intel GPUs:
+
+```
+$ echo "blacklist i915" | sudo tee -a /etc/modprobe.d/blacklist.conf
+```
+
+A description on how to do it on some complex blacklisting scenarios can be
+found in this [RH KCS article](https://access.redhat.com/solutions/41278).
+
+##### VFIO reservation
+
 So first we find the PCI devices, for example:
 
 ```
