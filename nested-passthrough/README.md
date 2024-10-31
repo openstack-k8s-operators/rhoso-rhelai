@@ -31,7 +31,57 @@ $ make download_tools validate_host
 ```
 
 The `validate_host` target may fail if you don't have an NVIDIA GPU, if the GPU
-is being held by the graphics driver, is IOMMU is not properly configured, etc.
+is being held by the graphics driver, if IOMMU is not properly configured, etc.
+
+### Setting up the host
+
+We have to enable IOMMU and reserve the PCI devices. These operations change
+the booting command line and require generating the new GRUB configuration file
+and rebooting the machine, so we recommend following modifying the grub args
+for IOMMU and PCI reservation, and the recreate GRUB configuration and finally
+rebooting.  That is the order we show below.
+
+#### IOMMU
+
+If we are using an Intel machine, we can enable IOMMU with:
+
+```
+$ sudo grubby --update-kernel ALL --args 'intel_iommu=on iommu=pt'
+```
+
+#### Reserve PCI devices
+
+We don't want the nvidia driver to hold our PCI devices, or they won't be
+available for PCI passthrough.
+
+So first we find the PCI devices, for example:
+
+```
+$ sudo dnf -y install pciutils
+$ sudo lspci -nn | grep NVIDIA
+04:00.0 3D controller [0302]: NVIDIA Corporation GA100 [A100 PCIe 40GB] [10de:20f1] (rev a1)
+```
+
+Now that we see that the device has vendor id `10de` (that's NVIDIA) and
+product id `20f1` we can reserve it.
+
+```
+$ PCI="10de:20f1"
+$ sudo grubby --update-kernel ALL --args "rd.driver.pre=vfio_pci vfio_pci.ids=${PCI} modules-load=vfio,vfio-pci,vfio_iommu_type1,vfio_pci_vfio_virqfd"
+```
+
+Note: If we wanted to reserve multiple PCI devices that have different product
+id, we can separate them with a comma: `PCI=10de:20f1,10de:2684`
+
+#### Rebuild GRUB cfg
+
+Now we need to rebuild GRUB configuration file and reboot.
+
+```
+$ sudo grub2-mkconfig -o /etc/grub2.cfg
+$ sudo grub2-mkconfig -o /boot/efi/EFI/centos/grub.cfg
+$ sudo shutdown -r now
+```
 
 ## Deploying RHOSO
 
