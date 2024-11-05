@@ -126,12 +126,12 @@ endif
 deploy_rhel_ai: ## Deploy RHEL AI on RHOSO
 	$(eval $(call vars))
 ifeq (,$(wildcard out/rhel-ai-disk.qcow2))
-	ifeq $($(AI_IMAGE_URL),)
+        ifeq ($(AI_IMAGE_URL),)
 		$(error Please go to https://access.redhat.com/downloads/content/932 , copy the link to the qcow2 download, and pass it in the AI_IMAGE_URL env var or manually download it to out/rhel-ai-disk.qcow2)
-	else
+        else
 		$(info Downloading RHEL AI image)
 		@curl -Lo out/rhel-ai-disk.qcow2 "$(AI_IMAGE_URL)"
-	endif
+        endif
 else
 	$(info RHEL AI image already present in the system)
 endif
