@@ -1,0 +1,66 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- https://raw.githubusercontent.com/openstack-k8s-operators/openstack-operator/main/config/samples/core_v1beta1_openstackcontrolplane_galera_network_isolation.yaml
+patches:
+# Remove existing backends so we don't end up with a volume1 useless object
+- target:
+    kind: OpenStackControlPlane
+    name: .*
+  patch: |-
+    - op: remove
+      path: /spec/cinder/template/cinderVolumes
+- target:
+    kind: OpenStackControlPlane
+    name: .*
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: openstack
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    - op: replace
+      path: /spec/nova/template/apiServiceTemplate/customServiceConfig
+      value: |
+        [pci]
+        alias = { "vendor_id":"${VENDOR_ID}", "product_id":"${PRODUCT_ID}", "device_type":"type-PCI", "name":"nvidia", "numa_policy":"preferred" }
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    - op: replace
+      path: /spec/manila/enabled
+      value: false
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    - op: replace
+      path: /spec/cinder/enabled
+      value: false
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    - op: replace
+      path: /spec/swift/enabled
+      value: false
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    - op: replace
+      path: /spec/barbican/enabled
+      value: false
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    # We don't deploy swift so revert https://github.com/openstack-k8s-operators/openstack-operator/commit/b7e00844e8af05da46ebbc67ba2f5e1ab0689b76#diff-19ef38b27e8fa6310774e0ed51b3f5ab4ffcd3b7eb50ba0edfaecf5890ef115cR57
+    - op: remove
+      path: /spec/glance/template/customServiceConfig
+    - op: replace
+      path: /spec/glance/template/glanceAPIs/default/type
+      value: single

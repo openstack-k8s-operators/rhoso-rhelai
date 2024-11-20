@@ -1,0 +1,14 @@
+apiVersion: dataplane.openstack.org/v1beta1
+kind: OpenStackDataPlaneService
+metadata:
+  name: tunneling
+spec:
+  playbookContents: |
+    - hosts: all
+      strategy: linear
+      tasks:
+        - name: Enable podified-repos
+          become: true
+          ansible.builtin.shell: |
+            set -euxo pipefail
+            ovs-vsctl --may-exist add-port {{ neutron_physical_bridge_name }} ${TUN_NAME} -- set interface ${TUN_NAME} type=geneve options:remote_ip=${TUN_IP} options:key=${GNV_ID}

@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: openstack
+
+resources:
+  - tunneling.yaml
+  - mtu.yaml
+
+components:
+- ${BASE_DATAPLANE_YAML}
+
+patches:
+- path: os-net-config-template.yaml
+
+- target:
+    kind: OpenStackDataPlaneNodeSet
+    name: .*
+  patch: |-
+    - op: replace
+      path: /spec/services
+      value:
+        - bootstrap
+        - download-cache
+        - configure-network
+        - validate-network
+        - install-os
+        - configure-os
+        - ssh-known-hosts
+        - run-os
+        - reboot-os
+        - install-certs
+        - ovn
+        - tunneling
+        - neutron-metadata
+        - libvirt
+        - nova
+        - telemetry
+    # Set value to `force` to always reboot on `reboot-os` and not only when necessary
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVars/edpm_reboot_strategy
+      value: auto
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVars/edpm_kernel_args
+      value: "${KERNEL_ARGS}"
