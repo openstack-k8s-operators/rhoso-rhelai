@@ -64,3 +64,21 @@ patches:
     - op: replace
       path: /spec/glance/template/glanceAPIs/default/type
       value: single
+# Make OVN use LoadBalancer
+- target:
+    kind: OpenStackControlPlane
+    name: openstack
+  patch: |-
+    - op: remove
+      path: /spec/ovn/template/ovnDBCluster/ovndbcluster-sb/networkAttachment
+    - op: add
+      path: /spec/ovn/template/ovnDBCluster/ovndbcluster-sb/override
+      value:
+        service:
+          metadata:
+            annotations:
+              metallb.universe.tf/address-pool: internalapi
+              metallb.universe.tf/allow-shared-ip: internalapi
+              metallb.universe.tf/loadBalancerIPs: 172.17.0.80
+          spec:
+            type: LoadBalancer
