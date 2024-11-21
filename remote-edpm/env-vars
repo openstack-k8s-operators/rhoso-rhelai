@@ -74,9 +74,6 @@ SSH_KEY_FILE=
 
 NETCONFIG_TEMPLATE="./templates/network_v1beta1_netconfig.yaml"
 
-# This will be added after the OCP DNS resolver. Needed to not lose local DNS resolution if we have it.
-INET_DNS_SERVER=1.1.1.1
-
 # For now we only support `intel` this is used for the kernel args and enabling IOMMU
 EDPM_CPU=intel
 # If you want to add kernel args like hugepages=1GB
@@ -132,5 +129,5 @@ function gen_edpm_config {
     sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g" ./templates/preprovisioned/kustomization.yaml > ./out/preprovisioned/kustomization.yaml
     sed "s/\${MTU}/${MTU}/g;s/\${NODE_NAME}/${OCP_NODE_NAME}/g" ./templates/preprovisioned/mtu.yaml > ./out/preprovisioned/mtu.yaml
     sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g" ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
-    sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/os-net-config-template.yaml > ./out/preprovisioned/os-net-config-template.yaml
+    cp ./templates/preprovisioned/os-net-config-template.yaml ./out/preprovisioned/os-net-config-template.yaml
 }
