@@ -194,6 +194,7 @@ the different phases.  This is a non-exhaustive list:
   - CRC_DISK
   - DEPLOY_CINDER
   - CRC_VERSION
+  - CRC_MONITORING_ENABLED
 
 - For the edpm node:
   - EDPM_CPUS
@@ -211,6 +212,7 @@ the different phases.  This is a non-exhaustive list:
   - AI_RAM: In GiB
   - AI_DISK
   - PULL_SECRET
+  - FIP_ADDR
 
   For example, if we have more resources, and the secret is not located on the
   home directory, you may use something like this:
