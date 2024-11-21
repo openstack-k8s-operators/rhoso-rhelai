@@ -11,4 +11,17 @@ spec:
           become: true
           ansible.builtin.shell: |
             set -euxo pipefail
-            ovs-vsctl --may-exist add-port {{ neutron_physical_bridge_name }} ${TUN_NAME} -- set interface ${TUN_NAME} type=geneve options:remote_ip=${TUN_IP} options:key=${GNV_ID}
+
+            cat <<EOF > "/etc/systemd/system/${TUN_NAME}.service"
+            [Unit]
+            Description=Create ${TUN_NAME} bridge
+            Requires=network-online.target
+            After=network-online.target
+            [Service]
+            ExecStart=ovs-vsctl --may-exist add-port {{ neutron_physical_bridge_name }} ${TUN_NAME} -- set interface ${TUN_NAME} type=geneve options:remote_ip=${TUN_IP} options:key=${GNV_ID}
+            RemainAfterExit=true
+            Type=oneshot
+            [Install]
+            WantedBy=multi-user.target edpm_ovn_controller.service
+            EOF
+            systemctl enable --now "${TUN_NAME}.service"
