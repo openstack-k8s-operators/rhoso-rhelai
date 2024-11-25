@@ -25,3 +25,7 @@ spec:
             WantedBy=multi-user.target edpm_ovn_controller.service
             EOF
             systemctl enable --now "${TUN_NAME}.service"
+
+            systemctl restart edpm_ovn_controller
+            # ovn_metadata container is not present yet
+            # systemctl restart edpm_ovn_metadata_agent
