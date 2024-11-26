@@ -98,13 +98,13 @@ TUN_LOCAL_IP="${IP_NM%/*}"
 
 if [ -z "${TUN_LOCAL_IP}" ]; then
     echo "Error: Cannot determine the IP the remote node tunnel should connect to. Please set TUN_LOCAL_IP"
-    exit 1
+    return 1
 fi
 
 
 if [ -n "${SSH_KEY_FILE}" ] && ! ( [ -f "${SSH_KEY_FILE}" ] && [ -f "${SSH_KEY_FILE}.pub" ] ); then
     echo "Error: '${SSH_KEY_FILE}' or '${SSH_KEY_FILE}.pub' missing"
-    exit 1
+    return 1
 fi
 
 
