@@ -93,8 +93,10 @@ fi
 
 
 # Get the local IP that the remote will use to connect
-IP_NM=$(ip -o a |grep "${REMOTE_EDPM_IP%.*}\."|awk '{print $4}')
-TUN_LOCAL_IP="${IP_NM%/*}"
+if [ -z "${TUN_LOCAL_IP}" ]; then
+    IP_NM=$(ip -o a |grep "${REMOTE_EDPM_IP%.*}\."|awk '{print $4}')
+    TUN_LOCAL_IP="${IP_NM%/*}"
+fi
 
 if [ -z "${TUN_LOCAL_IP}" ]; then
     echo "Error: Cannot determine the IP the remote node tunnel should connect to. Please set TUN_LOCAL_IP"
