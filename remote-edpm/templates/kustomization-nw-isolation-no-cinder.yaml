@@ -25,7 +25,7 @@ patches:
       path: /spec/nova/template/apiServiceTemplate/customServiceConfig
       value: |
         [pci]
-        alias = { "vendor_id":"${VENDOR_ID}", "product_id":"${PRODUCT_ID}", "device_type":"type-PCI", "name":"nvidia", "numa_policy":"preferred" }
+        alias = { "vendor_id":"${VENDOR_ID}", "product_id":"${PRODUCT_ID}", "device_type":"type-PCI", "name":"gpu", "numa_policy":"preferred" }
 - target:
     kind: OpenStackControlPlane
     name: openstack
