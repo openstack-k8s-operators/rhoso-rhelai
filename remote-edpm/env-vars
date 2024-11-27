@@ -20,9 +20,13 @@ SSH_USER=geguileo
 SSH_ARGS="-o IdentityFile=~/.ssh/id_rsa -o User=${SSH_USER}"
 
 # For PCI passthrough we need to know the PCI vendor and product IDs
-  # We can set them both manually here, for example for NVIDIA RTX4090
-PCI_VENDOR_ID='10de'
-PCI_PRODUCT_ID='2684'
+# NVIDIA => 10de    AMD => 1002
+  # We can set them both manually here, for example for AMD MI210
+PCI_VENDOR_ID='1002'
+PCI_PRODUCT_ID='740f'
+  # For example for NVIDIA RTX4090
+  # PCI_VENDOR_ID='10de'
+  # PCI_PRODUCT_ID='2684'
   # Or we could just set the PCI_VENDOR_ID as above and automatically get the producing ID with
   # PCI_PRODUCT_ID=$(ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} "sudo dnf -y install pciutils && lspci -n |grep ${PCI_VENDOR_ID} | cut -f3 -d' '| cut -f2 -d: | head -n1")
 
