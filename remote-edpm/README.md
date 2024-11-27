@@ -247,7 +247,8 @@ install_yamls deployment we have:
 - Run ansible playbook after `ovn` has been deployed to create the tunnel.
 - Use custom `edpm_network_config_template` that, unlike the standard one,
   doesn't move the first available nic (`nic1` alias in `os-net-config`) on the
-  edpm node under the bridge, and sets the bridge IP to `192.168.140.100`.
+  edpm node under the bridge, sets the bridge IP to `192.168.140.100` and adds
+  a custom dns nameserver (`${INET_DNS_SERVER}`).
 
 ### Create local tunnel
 
