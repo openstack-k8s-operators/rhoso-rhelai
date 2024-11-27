@@ -50,13 +50,15 @@ edpm nodes that connect to the OCP cluster and possible local EDPM nodes:
 
 ## Limitations
 
-At the time of this writing OpenStack networking will not work on the EDPM
-node, so we'll have to launch our instances without nic, ensure we have
-everything we need in our glance images, and we have a valid user and password
-setup, because we'll be connecting using `virsh console` for now.
+At the time of this writing OpenStack networking will not provide external
+access (to Internet) even though we can attach br-ex network (`192.168.140.x`
+IPs).  Though that network will connect the VM with the OCP network and allow
+us to ssh into it from the OCP node.
 
 When opening the local tunnel it assumes we are using `firewalld` or nothing.
 Scripts don't handle nftables.
+
+There is no support for using a Jump Box to access the edpm node.
 
 ## Configure vars
 
@@ -301,13 +303,18 @@ $ oc rsh openstackclient openstack compute service list --service=nova-compute
 
 # Run a VM
 
-Now the EDPM node is ready we can run a VM to test things. Remember we don't
-have network for VMs.
+Now the EDPM node is ready we can run a VM to test things.
+
+First go into the `openstackclient` pod to run commands:
 
 ```bash
 $ oc rsh openstackclient
-
 $ source ~/cloudrc
+```
+
+Now get the `cirros` image and create the flavor:
+
+```bash
 $ glance --force image-create-via-import \
     --disk-format qcow2 \
     --container-format bare \
@@ -320,21 +327,52 @@ $ openstack flavor create --ram 4096 --vcpus 12 --disk 50 gpu \
   --property "pci_passthrough:alias"="gpu:1" \
   --property "hw:pci_numa_affinity_policy=preferred" \
   --property "hw:hide_hypervisor_id"=true
+```
 
-$ openstack --os-compute-api-version 2.37 server create --flavor gpu --image cirros --no-network cirros --security-group default --wait
+Now we create the networks, security group, etc.
 
-$ exit
+```bash
+$ openstack network create private --share
+$ openstack subnet create priv_sub --subnet-range 192.168.0.0/24 --network private
+$ openstack network create public --external --provider-network-type flat --provider-physical-network datacentre
+$ openstack subnet create public_subnet --subnet-range 192.168.140.0/24 --allocation-pool start=192.168.140.171,end=192.168.140.250 --gateway 192.168.140.1 --dhcp --network public
+
+$ openstack router create priv_router
+$ openstack router add subnet priv_router priv_sub
+$ openstack router set priv_router --external-gateway public
+
+$ openstack security group create basic
+$ openstack security group rule create basic --protocol icmp --ingress --icmp-type -1
+$ openstack security group rule create basic --protocol tcp --ingress --dst-port 22
+
+$ openstack security group rule create basic --protocol tcp --remote-ip 0.0.0.0/0
+```
+
+Create the SSH key for the VM:
+
+```bash
+$ openstack keypair create cirros > cirros.pem
+$ chmod 600 cirros.pem
+```
+
+Finally create the VM
+
+```
+$ openstack server create --flavor nvidia --image cirros --key-name cirros --nic net-id=private cirros --security-group basic --wait
 ```
 
 The machine should quickly become ready, although it will depend on the
 connection speed between your OCP cluster and the remote EDPM node, because
 the glance image has to go from your local machine to the remote one.
 
-Now we can go into the remote node and into the VM:
+Now we will assign a static floating IP (so we don't have to check what IP was
+assigned) and use that address to SSH into the VM:
 
 ```bash
-$ ssh ${SSH_ARGS} ${REMOTE_EDPM_IP}
-$ sudo podman exec -u root -it nova_compute /bin/bash
-# VM_ID=$(virsh list --all| tail -n +3|awk '{print $2}')
-# virsh console $VM_ID
+$ FIP_ADDR=192.168.140.222
+$ openstack floating ip create --floating-ip-address $FIP_ADDR public
+$ openstack server add floating ip cirros $FIP_ADDR
+$ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./cirros.pem cirros@${FIP_ADDR}
 ```
+
+**Note:** Remember the VM username is `cirros` and the password is `gocubsgo`.
