@@ -10,7 +10,7 @@ data:
     {% for network in nodeset_networks %}
     {{ mtu_list.append(lookup('vars', networks_lower[network] ~ '_mtu')) }}
     {%- endfor %}
-    {{ ctlplane_dns_nameservers.append('${DNS_SERVER}') }}
+    {{ ctlplane_dns_nameservers.insert(0, '${DNS_SERVER}') }}
     {% set min_viable_mtu = mtu_list | max %}
     network_config:
     - type: ovs_bridge
