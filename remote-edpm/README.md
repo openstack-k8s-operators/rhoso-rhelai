@@ -1,6 +1,3 @@
-TODO: Use existing SSH user
-
-
 # Adding a remote EDPM node to RHOSO
 
 The objective of this guide is to help us add a host that is in another network
