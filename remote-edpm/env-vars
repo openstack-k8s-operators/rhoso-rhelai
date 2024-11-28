@@ -137,7 +137,7 @@ function gen_edpm_config {
 
     sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g" ./templates/preprovisioned/kustomization.yaml > ./out/preprovisioned/kustomization.yaml
     sed "s/\${MTU}/${MTU}/g;s/\${NODE_NAME}/${OCP_NODE_NAME}/g" ./templates/preprovisioned/mtu.yaml > ./out/preprovisioned/mtu.yaml
-    sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" \
+    sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${DNS_SERVER}/${INET_DNS_SERVER}/g;s/\${MTU}/${MTU}/g" \
         ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
     sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/os-net-config-template.yaml > ./out/preprovisioned/os-net-config-template.yaml
 }
