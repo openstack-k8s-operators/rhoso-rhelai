@@ -382,7 +382,7 @@ $ chmod 600 cirros.pem
 Finally create the VM
 
 ```
-$ openstack server create --flavor nvidia --image cirros --key-name cirros --nic net-id=private cirros --security-group basic --wait
+$ openstack server create --flavor gpu --image cirros --key-name cirros --nic net-id=private cirros --security-group basic --wait
 ```
 
 The machine should quickly become ready, although it will depend on the
