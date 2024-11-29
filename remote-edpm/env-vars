@@ -110,12 +110,12 @@ if [ -z "${TUN_LOCAL_IP}" ]; then
     return 1
 fi
 
+DEFAULT_SSH_KEY_FILE="${INSTALL_YAMLS_DIR}/out/edpm/ansibleee-ssh-key-id_rsa"
 
-if [ -n "${SSH_KEY_FILE}" ] && ! ( [ -f "${SSH_KEY_FILE}" ] && [ -f "${SSH_KEY_FILE}.pub" ] ); then
+if [ -n "${SSH_KEY_FILE}" ] && [ "${SSH_KEY_FILE}" != "${DEFAULT_SSH_KEY_FILE}" ] && ! ( [ -f "${SSH_KEY_FILE}" ] && [ -f "${SSH_KEY_FILE}.pub" ] ); then
     echo "Error: '${SSH_KEY_FILE}' or '${SSH_KEY_FILE}.pub' missing"
     return 1
 fi
-
 
 
 function generate_key {
