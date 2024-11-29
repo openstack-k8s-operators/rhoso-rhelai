@@ -63,6 +63,13 @@ edpm nodes that connect to the OCP cluster and possible local EDPM nodes:
   the remote node.  If a VPN is needed, please connect to the VPN on the host
   before following up with this guide.
 
+- You have cloned this repository and are in the right directory:
+
+  ```bash
+  $ git clone https://github.com/Akrog/rhoso-rhelai.git
+  $ cd rhoso-rhelai/remote-edpm
+  ```
+
 ## Limitations
 
 At the time of this writing OpenStack networking will not provide external
