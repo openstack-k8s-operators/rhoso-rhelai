@@ -248,12 +248,7 @@ We generate the SSH key (helper function from `env-vars` and prepare edpm host
 
 ```bash
 $ generate_key
-
-$ ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} \
-    bash -s \
-    SSH_USER=${SSH_USER} \
-    SSH_KEY="'$(cat ${SSH_KEY_FILE}.pub)'" \
-    < ./scripts/prepare-edpm.sh
+$ prepare_edpm
 ```
 
 ### Prepare configuration

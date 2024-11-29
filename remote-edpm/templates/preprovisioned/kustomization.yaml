@@ -42,3 +42,6 @@ patches:
     - op: add
       path: /spec/nodeTemplate/ansible/ansibleVars/edpm_kernel_args
       value: "${KERNEL_ARGS}"
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVars/ansible_ssh_common_args
+      value: "${SSH_ARGS}"

@@ -1,5 +1,65 @@
 #!/bin/bash
 set -e
+SCRIPT_DIR="$(realpath "$( dirname "${BASH_SOURCE[0]}" )")"
+SSHUTTLE_PID_FILE="$(realpath "${SCRIPT_DIR}/../out/sshuttle.pid")"
+
+if [ -n "${JUMP_BOX}" ] && ( [ ! -e "${SSHUTTLE_PID_FILE}" ] || ! grep -q sshuttle "/proc/$(cat ${SSHUTTLE_PID_FILE})/cmdline" ); then
+    if ! which sshuttle; then
+        if ! sudo dnf -y install sshuttle; then
+            sudo dnf -y install python3-pip
+            sudo pip install sshuttle
+        fi
+    fi
+    if ! ip rule | grep "fwmark ${MARK}"; then
+        echo "Adding routes and rules for sshuttle's TPROXY"
+        sudo ip route add local default dev lo table 100
+        sudo ip rule add fwmark "${TMARK}" lookup 100
+        sudo ip -6 route add local default dev lo table 100
+        sudo ip -6 rule add fwmark "${TMARK}" lookup 100
+    fi
+
+    sudo openvpn --daemon --config /etc/openvpn/ovpn-brq2-udp.conf
+
+    sudo ip route add 10.8.231.19 dev lo
+    sudo ip route add 10.8.231.19 dev lo metric 10
+
+    sudo ip route add nat 192.168.140 via 127.0.0.1
+
+    sudo ip route add nat 10.8.231.19 via 127.0.0.1
+    sudo ip route add local default dev lo table 100
+
+# sudo iptables -t nat -A LIBVIRT_PRT -s 192.168.130.0/24 -d 10.8.231.19 -p tcp -j MASQUERADE --to
+# sudo iptables -t nat -I OUTPUT -p udp --dport 6081 -j NOTRACK
+
+    sudo iptables
+
+
+    -A LIBVIRT_PRT -s 192.168.130.0/24 ! -d 192.168.130.0/24 -p tcp -j MASQUERADE --to-ports 1024-65535
+    -A LIBVIRT_PRT -s 192.168.130.0/24 ! -d 192.168.130.0/24 -p udp -j MASQUERADE --to-ports 1024-65535
+
+    default via 192.168.1.1 dev eth0 proto static metric 100
+    10.0.0.0/8 via 10.45.224.1 dev tun0 proto static metric 50
+    10.45.224.0/20 dev tun0 proto kernel scope link src 10.45.225.91 metric 50
+
+    echo "Creating an sshuttle connection to ${REMOTE_EDPM_IP} using Jumpbox ${JUMP_BOX} and opening remote port 9000 to ssh connect back"
+    # Open remote port 9000 for connecting back
+    sudo SSH_AUTH_SOCK="${SSH_AUTH_SOCK}" sshuttle \
+        --method=tproxy \
+        -D \
+        --pidfile="${SSHUTTLE_PID_FILE}" \
+        -r "${SSH_USER}@${REMOTE_EDPM_IP}" \
+        -e "ssh -R 9000:localhost:22 -J ${JUMP_BOX}" \
+        "${REMOTE_EDPM_IP}/32"
+
+    # Authorize key in current user
+    SSH_KEY="$(cat ${SSH_KEY_FILE}.pub)"
+    if ! grep -Fq "${SSH_KEY}" ~/.ssh/autorized_keys; then
+        echo "Adding SSH pub key to this machine's authorized keys"
+        echo "${SSH_KEY}" >> ~/.ssh/autorized_keys;
+    fi
+    # sshuttle -D --pidfile="${SSHUTTLE_PID_FILE}" -r "${SSH_USER}@${REMOTE_EDPM_IP}" -e "ssh -J ${JUMP_BOX}" ${REMOTE_EDPM_IP}/32
+fi
+
 
 # Create tunnel
 if ! ip link show "${TUN_NAME}" 2>/dev/null; then

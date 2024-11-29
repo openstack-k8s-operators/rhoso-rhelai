@@ -30,6 +30,9 @@ PCI_PRODUCT_ID='740f'
   # Or we could just set the PCI_VENDOR_ID as above and automatically get the producing ID with
   # PCI_PRODUCT_ID=$(ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} "sudo dnf -y install pciutils && lspci -n |grep ${PCI_VENDOR_ID} | cut -f3 -d' '| cut -f2 -d: | head -n1")
 
+# Jump box to use, for example `geguileo@192.168.1.22`.
+# Multiple jump boxes can be set using comma (`,`) as a separator
+JUMP_BOX=
 
 ###############################################################################
 # Variables you should check
@@ -86,6 +89,12 @@ EDPM_CPU=intel
 # If you want to add kernel args like hugepages=1GB
 EDPM_ADD_KERNEL_ARGS=
 
+
+# For sshuttle when using a JUMP_BOX
+TMARK='0x1'
+SSHUTTLE_PID_FILE="$(realpath out/sshuttle.pid)"
+
+
 ###############################################################################
 # Functions
 
@@ -117,6 +126,10 @@ if [ -n "${SSH_KEY_FILE}" ] && [ "${SSH_KEY_FILE}" != "${DEFAULT_SSH_KEY_FILE}" 
     return 1
 fi
 
+if [ -n "${JUMP_BOX}" ]; then
+    SSH_ARGS="${SSH_ARGS} -J ${JUMP_BOX}"
+fi
+
 
 function generate_key {
     OUTPUT_DIR="${INSTALL_YAMLS_DIR}/out/edpm"
@@ -128,16 +141,34 @@ function generate_key {
         ${INSTALL_YAMLS_DIR}/devsetup/scripts/gen-ansibleee-ssh-key.sh
 }
 
+
+function prepare_edpm {
+    ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} \
+        bash -s \
+        SSH_USER=${SSH_USER} \
+        SSH_PUB_KEY="'$(cat ${SSH_KEY_FILE}.pub)'" \
+        SSH_PRIV_KEY="'$(cat ${SSH_KEY_FILE})'" \
+        JUMP_BOX="${JUMP_BOX}" \
+        TMARK="${TMARK}" \
+        < ./scripts/prepare-edpm.sh
+}
+
+
 function gen_edpm_config {
     sed "s/\${VENDOR_ID}/${PCI_VENDOR_ID}/g;s/\${PRODUCT_ID}/${PCI_PRODUCT_ID}/g" ./templates/nova-compute.conf > ./out/nova-compute.conf
 
     mkdir -p out/preprovisioned
 
     BASE_DATAPLANE_YAML="$(realpath -m --relative-to=$(realpath ./out/preprovisioned) ${INSTALL_YAMLS_DIR}/out/operator/openstack-operator/config/samples/dataplane/base)"
+    EDPM_SSH_ARGS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    if [ -n "${JUMP_BOX}" ]; then
+        EDPM_SSH_ARGS="${EDPM_SSH_ARGS} -J ${JUMP_BOX}"
+    fi
 
-    sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g" ./templates/preprovisioned/kustomization.yaml > ./out/preprovisioned/kustomization.yaml
+    sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g;s#\${SSH_ARGS}#${EDPM_SSH_ARGS}#g" \
+        ./templates/preprovisioned/kustomization.yaml > ./out/preprovisioned/kustomization.yaml
     sed "s/\${MTU}/${MTU}/g;s/\${NODE_NAME}/${OCP_NODE_NAME}/g" ./templates/preprovisioned/mtu.yaml > ./out/preprovisioned/mtu.yaml
-    sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${DNS_SERVER}/${INET_DNS_SERVER}/g;s/\${MTU}/${MTU}/g" \
+    sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${DNS_SERVER}/${INET_DNS_SERVER}/g;s/\${MTU}/${MTU}/g;s/\${REMOTE_SSH_USER}/$(whoami)/g;s/\${SSH_USER}/${SSH_USER}/g;s/\${JUMP_BOX}/${JUMP_BOX}/g" \
         ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
     sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/os-net-config-template.yaml > ./out/preprovisioned/os-net-config-template.yaml
 }
