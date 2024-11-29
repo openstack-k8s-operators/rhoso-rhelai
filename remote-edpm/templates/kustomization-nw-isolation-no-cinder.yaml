@@ -69,9 +69,8 @@ patches:
     kind: OpenStackControlPlane
     name: openstack
   patch: |-
-    # Don't remove it for now, because then the ovn cluster controller won't create the `ovncontroller-config` config map.
-    # - op: remove
-    #   path: /spec/ovn/template/ovnDBCluster/ovndbcluster-sb/networkAttachment
+    - op: remove
+      path: /spec/ovn/template/ovnDBCluster/ovndbcluster-sb/networkAttachment
     - op: add
       path: /spec/ovn/template/ovnDBCluster/ovndbcluster-sb/override
       value:
