@@ -17,7 +17,7 @@ REMOTE_EDPM_IP=192.168.1.13
 SSH_USER=geguileo
 
 # SSH args to connect from this host to the remote.  Can be different user from SSH_USER
-SSH_ARGS="-o IdentityFile=~/.ssh/id_rsa -o User=${SSH_USER}"
+SSH_ARGS="-o IdentityFile=~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o User=${SSH_USER}"
 
 # For PCI passthrough we need to know the PCI vendor and product IDs
 # NVIDIA => 10de    AMD => 1002
