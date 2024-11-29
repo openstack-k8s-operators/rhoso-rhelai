@@ -146,6 +146,13 @@ $ source ./env-vars
    bridge).  More on the types of libvirt bridges here:
    https://libvirt.org/firewall.html
 
+4. Change the MTUs for the Cluster Network. This will take a very long time,
+   because the CRC VM will need to reboot twice.
+
+   ```bash
+   $ change_cluster_mtu
+   ```
+
 ### Deploy operators
 
 Deploy the RHOSO operators with:

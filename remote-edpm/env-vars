@@ -141,3 +141,27 @@ function gen_edpm_config {
         ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
     sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/os-net-config-template.yaml > ./out/preprovisioned/os-net-config-template.yaml
 }
+
+
+function wait_mc_applied {
+  echo 'Waiting for the cluster to begin updating'
+  while ! oc wait mcp master --for condition=Updating; do sleep 10; done
+  echo 'Waiting for the cluster to finish'
+  while ! oc wait mcp master --for condition=Updated; do sleep 10; done
+}
+
+
+function change_cluster_mtu {
+    # We need to set the "machine" part without changes or changes will be ignored
+    echo 'Requesting the migration of the cluster MTU'
+    CLUSTER_MTU="$((${MTU}-100))"
+    oc patch Network.operator.openshift.io cluster --type=merge \
+        --patch "{\"spec\": { \"migration\": { \"mtu\": { \"network\": { \"from\": 1400, \"to\": ${CLUSTER_MTU} }, \"machine\": {\"from\": 1500, \"to\": 1500} } } } }"
+
+    wait_mc_applied
+
+    echo 'Finalizing the migration of the cluster MTU'
+    oc patch Network.operator.openshift.io cluster --type=merge --patch "{\"spec\": { \"migration\": null, \"defaultNetwork\":{ \"ovnKubernetesConfig\": { \"mtu\": ${CLUSTER_MTU} }}}}"
+
+    wait_mc_applied
+}
