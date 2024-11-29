@@ -37,8 +37,13 @@ edpm nodes that connect to the OCP cluster and possible local EDPM nodes:
 
 ## Assumptions
 
-- This guide assumes you have already cloned the `install_yamls` repository
-  from https://github.com/openstack-k8s-operators/install_yamls.
+- This guide assumes you have already cloned the `install_yamls` repository:
+
+  ```bash
+  $ sudo dnf -y install git make ansible-core libvirt-daemon-common
+  $ git clone https://github.com/openstack-k8s-operators/install_yamls.git
+  $ make -C install_yamls/devsetup download_tools
+  ```
 
 - You have downloaded your pull secret from
   `https://cloud.redhat.com/openshift/create/local` and have it locally
