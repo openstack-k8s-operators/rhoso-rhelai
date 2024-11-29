@@ -2,6 +2,7 @@
   <name>'${VIRT_NETWORK}'</name>
   <forward mode="route"/>
   <bridge name="'${VIRT_NETWORK}'" stp="on" delay="0"/>
+  <mtu size="'${MTU}'"/>
   <mac address="52:54:00:51:eb:8a"/>
   <domain name="'${VIRT_NETWORK}'" localOnly="no"/>
   <ip family="ipv4" address="'${IP_ADDRESS_PREFIX}.1'" prefix="24">
