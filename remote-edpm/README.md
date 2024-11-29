@@ -45,6 +45,16 @@ edpm nodes that connect to the OCP cluster and possible local EDPM nodes:
   $ make -C install_yamls/devsetup download_tools
   ```
 
+  Until the [PR with fixes and features](https://github.com/openstack-k8s-operators/install_yamls/pull/949) is merged, we should use another `install_yamls` repo:
+
+  ```bash
+  $ sudo dnf -y install git make ansible-core libvirt-daemon-common
+  $ git clone https://github.com/Akrog/install_yamls.git
+  $ cd install_yamls
+  $ git checkout tunnel-fixes
+  $ make download_tools
+  ```
+
 - You have downloaded your pull secret from
   `https://cloud.redhat.com/openshift/create/local` and have it locally
   available.
