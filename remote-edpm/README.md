@@ -208,18 +208,19 @@ it at the nic level to accommodate the Geneve tunnel header overhead instead.
 
 There are 5 things that we need to manually do on the EDPM node:
 1. Provision the host with the OS
-2. Prepare it for pci-passthrough
-3. Install necessary packages
-4. Ensure SSH user exists
-5. Authorize RHOSO to SSH into edpm node
+2. Enable passwordless sudo
+3. Prepare it for pci-passthrough
+4. Install necessary packages
+5. Ensure SSH user exists
+6. Authorize RHOSO to SSH into edpm node
 
-You are responsible for the first step, the second step will be handled by the
-provisioning of the edpm node (using env vars `EDPM_CPU`,
+You are responsible for the first 2 steps, the third step will be handled by
+the provisioning of the edpm node (using env vars `EDPM_CPU`,
 `EDPM_ADD_KERNEL_ARGS`, `PCI_VENDOR_ID`, and `PCI_PRODUCT_ID`), and the last 3
 will be handled by the `prepare-edpm.sh` script.
 
 We generate the SSH key (helper function from `env-vars` and prepare edpm host
-(steps 3 to 5 from the list above):
+(steps 4 to 6 from the list above):
 
 ```bash
 $ generate_key
