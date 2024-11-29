@@ -3,7 +3,12 @@ set -e
 
 # Create tunnel
 if ! ip link show "${TUN_NAME}" 2>/dev/null; then
-    which brctl >/dev/null 2>&1 || sudo dnf -y install bridge-utils
+    if ! which brctl >/dev/null 2>&1; then
+        if [[ "$(cat /etc/redhat-release)" == CentOS* ]]; then
+            sudo dnf -y install epel-release
+        fi
+        sudo dnf -y install bridge-utils
+    fi
     sudo ip link add name "${TUN_NAME}" type geneve id "${GNV_ID}" remote "${REMOTE_EDPM_IP}"
     sudo ip link set "${TUN_NAME}" up
 
