@@ -1,0 +1,67 @@
+---
+# Copyright 2024 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+- name: Copy Nova config template to host
+  ansible.builtin.copy:
+    src: "{{ nova_cfg_template_path }}"
+    dest: ~/templates/nova-compute.conf
+
+- name: Generate nova compute config
+  ansible.builtin.shell:
+    chdir: "~/install_yamls"
+    cmd: |
+      sed 's/${VENDOR_ID}/{{ gpu_pci_vendor_id }}/g;s/${PRODUCT_ID}/{{ gpu_pci_id }}/g' ~/templates/nova-compute.conf > ./out/nova-compute.conf
+      cat ./out/nova-compute.conf
+    creates: ./out/nova-compute.conf
+
+- name: Generating eDPM SSH key
+  ansible.builtin.shell:
+    chdir: "~/install_yamls"
+    cmd: |
+      source ~/oclogin && \
+      OUTPUT_DIR="$(pwd)/out" ./devsetup/scripts/gen-ansibleee-ssh-key.sh
+
+- name: Determine PCI device BDF
+  ansible.builtin.shell:
+    cmd: |
+      lspci -n -d {{ gpu_pci_vendor_id }}:{{ gpu_pci_id }} | cut -f1 -d' ' | tr '\n' ' '
+  register: lspci_query_output
+
+- name: Copy gen-edpm-node.sh
+  ansible.builtin.copy:
+    src: scripts/gen-edpm-node.sh
+    dest: ~/gen-edpm-node.sh
+    mode: "0744"
+
+- name: Creating eDPM instance
+  ansible.builtin.shell:
+    chdir: "~/install_yamls"
+    cmd: |
+      source ~/oclogin && \
+      GPU_IDS="{{ gpu_pci_vendor_id }}:{{ gpu_pci_id }}" \
+      EDPM_COMPUTE_VCPUS={{ edpm_node_cpus }} \
+      EDPM_COMPUTE_RAM={{ edpm_node_ram }} \
+      EDPM_COMPUTE_DISK_SIZE={{ edpm_node_disk }} \
+      PCI_DEVICES={{ lspci_query_output.stdout }} \
+      OUTPUT_DIR=$(realpath ./out/) \
+      ~/gen-edpm-node.sh
+
+- name: Provisioning eDPM node
+  ansible.builtin.shell:
+    chdir: "~/install_yamls"
+    cmd: | 
+      source ~/oclogin && \
+      DATAPLANE_EXTRA_NOVA_CONFIG_FILE=$(realpath ./out/nova-compute.conf) DATAPLANE_TIMEOUT={{ edpm_timeout }} DATAPLANE_TOTAL_NODES=1 make edpm_wait_deploy

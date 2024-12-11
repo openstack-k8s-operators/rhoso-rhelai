@@ -1,0 +1,43 @@
+---
+# Copyright 2024 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# Install CRC and create a file to mark the fact
+- name: Deploy CRC
+  ansible.builtin.shell:
+    chdir: "~/install_yamls"
+    cmd: |
+      CRC_MONITORING_ENABLED={{ crc_monitoring_enabled }} \
+      CRC_VERSION={{ crc_version }} \
+      PULL_SECRET=$(realpath {{ crc_pull_secret }}) \
+      CPUS={{ crc_cpus }} \
+      MEMORY={{ 1024 * crc_mem }} \
+      DISK={{ crc_disk }} make -C ./devsetup crc crc_attach_default_interface && \
+      touch ./crc_deployed
+    creates: "./crc_deployed"
+  timeout: "{{ crc_deploy_timeout }}"
+
+- name: Copy oclogin script
+  ansible.builtin.copy:
+    src: oclogin
+    dest: ~/oclogin
+
+- name: Set up CRC storage
+  ansible.builtin.shell:
+    chdir: "~/install_yamls"
+    cmd: |
+      source ~/oclogin && \
+      NNCP_TIMEOUT={{ operators_timeout }} TIMEOUT={{ operators_timeout }} make crc_storage
+    creates: "./out/crc/storage.yaml"

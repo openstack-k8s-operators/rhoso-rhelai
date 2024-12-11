@@ -1,0 +1,82 @@
+---
+# Copyright 2024 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# seconds between retries for download tasks
+setup_rhelai_download_delay: 5
+
+# number of retries for download tasks
+setup_rhelai_download_retries: 5
+
+# Install yamls repo source
+install_yamls_source: "https://github.com/openstack-k8s-operators/install_yamls.git"
+
+# Commit hash, tag or other valid reference string
+install_yamls_commit_hash: "HEAD"
+
+# Resource allocation - control plane
+crc_cpus: 12
+crc_mem: 30
+crc_disk: 100
+crc_version: "2.45.0"
+crc_monitoring_enabled: false
+
+# Path to Openshift pull secret
+crc_pull_secret: "~/pull-secret"
+
+# Resource allocation - dataplane
+edpm_node_cpus: 30
+edpm_node_ram: 100
+edpm_node_disk: 640 # We need a lot of space because models are not quantized
+
+# Resource allocation - AI node
+ai_node_cpus: 20
+ai_node_ram: 40
+ai_node_disk: 300
+ai_node_gpus: "all" # Number of gpus for AI node, setting this to 'all' will trigger autodiscovery
+
+# Deploy Cinder
+deploy_cinder: false
+
+# Location of downloaded install_yamls
+install_yamls_dir: "out/install_yamls"
+
+# CRC Deploy timemout in seconds
+crc_deploy_timeout: 3600
+
+# Timeout for control plane creation
+ctrl_plane_timeout: "50m"
+
+# How many seconds should we wait after Control Plane is deployed
+# For stability reasons
+post_controlplane_deployment_sleep: 60
+
+# Timeout for operator creation
+operators_timeout: "1000s"
+
+# Timeout for EDPM creation
+edpm_timeout: "50m"
+
+# Kustomize template path - we use don't cinder by default
+kustomize_template_path: "templates/kustomization-no-cinder.yaml"
+
+# Nova template path
+nova_cfg_template_path: "templates/nova-compute.conf"
+
+# RHELAI qcow2 image URL
+rhelai_image_url: ""
+
+# Name of RHELAI VM
+ai_vm_name: "rhel-ai"
