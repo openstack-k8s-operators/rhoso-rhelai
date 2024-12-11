@@ -56,8 +56,10 @@ OCP_NODE_NAME=crc
 # This is the name that will be used for the bridge and libvirt network
 VIRT_NETWORK=rhoso
 
-# MTU value to account for the Geneve tunnel overhead
-MTU=1450
+# MTU value to account for the all the overhead
+# MTU=1450 ==> Only using geneve tunnel on same network
+# MTU=1310 ==> When using geneve tunnel on top of VPN tunnel
+MTU=1310
 
 # Template used for the RHOSO control plane
 CTL_TEMPLATE=./templates/kustomization-nw-isolation-no-cinder.yaml

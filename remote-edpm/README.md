@@ -174,9 +174,9 @@ operators are:
 
 - We are setting the metallb pool addresses so they are between
   `192.168.140.80` and `192.168.140.90`.
-- We are setting MTU to `1450` to account for the tunnel.
+- We are setting MTU to `1310` to account for the tunnel and VPN.
 
-**Note:** An alternative to decreasing the MTU to `1450` would be to increase
+**Note:** An alternative to decreasing the MTU to `1310` would be to increase
 it at the nic level to accommodate the Geneve tunnel header overhead instead.
 
 ### Deploy RHOSO control plane
@@ -272,7 +272,7 @@ $ gen_edpm_config
 Among the customizations that we have that diverge from a standard
 install_yamls deployment we have:
 
-- Setting a custom mtu (`1450`) for CRC on the `enp6s0` nic (that's the one
+- Setting a custom mtu (`1310`) for CRC on the `enp6s0` nic (that's the one
   linked to the `rhoso` libvirt bridge)
 - Run ansible playbook after `ovn` has been deployed to create the tunnel.
 - Use custom `edpm_network_config_template` that, unlike the standard one,
