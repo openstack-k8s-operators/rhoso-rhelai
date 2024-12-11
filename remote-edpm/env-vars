@@ -104,24 +104,22 @@ INTEL_KERNEL_ARGS="i915.blacklist=1 rd.driver.blacklist=i915"
 [ -n "${SSH_KEY_FILE}" ] || SSH_KEY_FILE="${INSTALL_YAMLS_DIR}/out/edpm/ansibleee-ssh-key-id_rsa"
 
 # Add conditional on EDPM_CPU once we support non intel CPUs in this script
-if [ -z "${EDPM_KERNEL_ARGS}" ]; then
-    case "${PCI_VENDOR_ID}" in
-        "${NVIDIA_VENDOR_ID}")
-          GPU_KERNEL_ARGS="${NVIDIA_KERNEL_ARGS}"
-          ;;
-        "${AMD_VENDOR_ID}")
-          GPU_KERNEL_ARGS="${AMD_KERNEL_ARGS}"
-          ;;
-        "${INTEL_VENDOR_ID}")
-          GPU_KERNEL_ARGS="${INTEL_KERNEL_ARGS}"
-          ;;
-        *)
-          GPU_KERNEL_ARGS="${NVIDIA_KERNEL_ARGS} ${AMD_KERNEL_ARGS} ${INTEL_KERNEL_ARGS}"
-          ;;
-    esac
+case "${PCI_VENDOR_ID}" in
+    "${NVIDIA_VENDOR_ID}")
+      GPU_KERNEL_ARGS="${NVIDIA_KERNEL_ARGS}"
+      ;;
+    "${AMD_VENDOR_ID}")
+      GPU_KERNEL_ARGS="${AMD_KERNEL_ARGS}"
+      ;;
+    "${INTEL_VENDOR_ID}")
+      GPU_KERNEL_ARGS="${INTEL_KERNEL_ARGS}"
+      ;;
+    *)
+      GPU_KERNEL_ARGS="${NVIDIA_KERNEL_ARGS} ${AMD_KERNEL_ARGS} ${INTEL_KERNEL_ARGS}"
+      ;;
+esac
 
-    EDPM_KERNEL_ARGS="${IOMMU_KERNEL_ARGS} ${GPU_KERNEL_ARGS} ${EDPM_ADD_KERNEL_ARGS}"
-fi
+EDPM_KERNEL_ARGS="${IOMMU_KERNEL_ARGS} ${GPU_KERNEL_ARGS} ${EDPM_ADD_KERNEL_ARGS}"
 
 
 # Get the local IP that the remote will use to connect
