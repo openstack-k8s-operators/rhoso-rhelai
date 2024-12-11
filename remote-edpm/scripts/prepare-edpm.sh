@@ -35,8 +35,7 @@ if [ ! -f "${SUDOERS_FILE}" ]; then
     sudo chmod 0660 "${SUDOERS_FILE}"
 fi
 
-# SH_HOME=$(eval $(echo ~${SSH_USER}))
-SSH_HOME=$(eval echo ~$USER)
+SSH_HOME=$(eval echo ~${SSH_USER})
 
 sudo mkdir -p "${SSH_HOME}/.ssh"
 sudo chmod 0700 "${SSH_HOME}/.ssh"
