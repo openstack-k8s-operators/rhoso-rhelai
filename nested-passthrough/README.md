@@ -41,6 +41,9 @@ and rebooting the machine, so we recommend following modifying the grub args
 for IOMMU and PCI reservation, and the recreate GRUB configuration and finally
 rebooting.  That is the order we show below.
 
+**Note:** Modifications to hypervisor PCI reservations, IOMMU etc can also be
+performed by the `ansible/setup_host.yml` ansible playbook.
+
 #### IOMMU
 
 If we are using an Intel machine, we can enable IOMMU with:

@@ -1,0 +1,55 @@
+---
+# Copyright 2024 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+# All variables intended for modification should be placed in this file.
+
+# seconds between retries for download tasks
+gpu_download_delay: 5
+
+# number of retries for download tasks
+gpu_download_retries: 5
+
+# Default gpu packages to install
+gpu_system_packages_default:
+  - grubby
+  - pciutils
+  - git
+  - make
+  - ansible-core
+  - libvirt-daemon-common
+
+# Overridable gpu packages to install, if not defined it will use default.
+gpu_system_packages: "{{ gpu_system_packages_default | default([]) }}"
+
+# Path to modprobe blacklist file
+gpu_blacklist_target: "/etc/modprobe.d/blacklist.conf"
+
+# Vendor ID of GPU on hypervisor
+# This is taken from the https://pci-ids.ucw.cz/ repository
+# 10de NVidia
+# 8086 Intel
+# 1022 or 1002 AMD
+gpu_vendor_id: "10de" # NVidia
+
+# PCI device id
+gpu_pci_id: ""
+
+# Which grub config should be modified (This path depends on RHEL version)
+grub_config_path: "/boot/grub2/grub.cfg"
+
+# Does the hypervisor use CPU from Intel?
+intel_cpu: true
