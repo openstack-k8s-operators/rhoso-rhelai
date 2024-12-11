@@ -21,8 +21,11 @@ SSH_ARGS="-o IdentityFile=~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnown
 
 # For PCI passthrough we need to know the PCI vendor and product IDs
 # NVIDIA => 10de    AMD => 1002
+NVIDIA_VENDOR_ID='10de'
+AMD_VENDOR_ID='1002'
+INTEL_VENDOR_ID='8086'
   # We can set them both manually here, for example for AMD MI210
-PCI_VENDOR_ID='1002'
+PCI_VENDOR_ID=$AMD_VENDOR_ID
 PCI_PRODUCT_ID='740f'
   # For example for NVIDIA RTX4090
   # PCI_VENDOR_ID='10de'
@@ -86,6 +89,13 @@ EDPM_CPU=intel
 # If you want to add kernel args like hugepages=1GB
 EDPM_ADD_KERNEL_ARGS=
 
+# Add conditional on EDPM_CPU once we support non intel CPUs in this script
+IOMMU_KERNEL_ARGS="intel_iommu=on iommu=pt vfio_pci.ids=${PCI_VENDOR_ID}:${PCI_PRODUCT_ID} rd.driver.pre=vfio_pci modules-load=vfio,vfio-pci,vfio_iommu_type1,vfio_pci_vfio_virqfd"
+
+NVIDIA_KERNEL_ARGS="noveau.blacklist=1 nvidia.blacklist=1 nvidia-drm.blacklist=1 nvidia-modeset.blacklist=1 nvidia-uvm.blacklist=1 rd.driver.blacklist=nouveau,nvidia,nvidia-drm,nvidia-modeset,nvidia-uvm"
+AMD_KERNEL_ARGS="amdgpu.blacklist=1 radeon.blacklist=1 rd.driver.blacklist=amdgpu,radeon"
+INTEL_KERNEL_ARGS="i915.blacklist=1 rd.driver.blacklist=i915"
+
 ###############################################################################
 # Functions
 
@@ -95,7 +105,22 @@ EDPM_ADD_KERNEL_ARGS=
 
 # Add conditional on EDPM_CPU once we support non intel CPUs in this script
 if [ -z "${EDPM_KERNEL_ARGS}" ]; then
-    EDPM_KERNEL_ARGS="${EDPM_ADD_KERNEL_ARGS} intel_iommu=on iommu=pt vfio_pci.ids=${PCI_VENDOR_ID}:${PCI_PRODUCT_ID} rd.driver.pre=vfio_pci modules-load=vfio,vfio-pci,vfio_iommu_type1,vfio_pci_vfio_virqfd"
+    case "${PCI_VENDOR_ID}" in
+        "${NVIDIA_VENDOR_ID}")
+          GPU_KERNEL_ARGS="${NVIDIA_KERNEL_ARGS}"
+          ;;
+        "${AMD_VENDOR_ID}")
+          GPU_KERNEL_ARGS="${AMD_KERNEL_ARGS}"
+          ;;
+        "${INTEL_VENDOR_ID}")
+          GPU_KERNEL_ARGS="${INTEL_KERNEL_ARGS}"
+          ;;
+        *)
+          GPU_KERNEL_ARGS="${NVIDIA_KERNEL_ARGS} ${AMD_KERNEL_ARGS} ${INTEL_KERNEL_ARGS}"
+          ;;
+    esac
+
+    EDPM_KERNEL_ARGS="${IOMMU_KERNEL_ARGS} ${GPU_KERNEL_ARGS} ${EDPM_ADD_KERNEL_ARGS}"
 fi
 
 
