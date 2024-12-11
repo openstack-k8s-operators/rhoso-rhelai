@@ -28,6 +28,8 @@ spec:
 
             sed -i 's/nameserver ${DNS_SERVER}//g' /etc/resolv.conf
 
+            sed -i 's/DNS1=${DNS_SERVER}/#DNS1=${DNS_SERVER}/g; s/DNS2=/DNS1=/g' /etc/sysconfig/network-scripts/ifcfg-br-ex
+
             systemctl restart edpm_ovn_controller
             # ovn_metadata container is not present yet
             # systemctl restart edpm_ovn_metadata_agent
