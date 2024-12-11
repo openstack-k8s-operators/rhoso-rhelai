@@ -158,7 +158,7 @@ $ source ./env-vars
 Deploy the RHOSO operators with:
 
 ```bash
-$ make -C "${INSTALL_YAMLS_DIR}" openstack_wait \
+$ make -C "${INSTALL_YAMLS_DIR}" openstack \
   NETWORK_ISOLATION_USE_DEFAULT_NETWORK=false \
   METALLB_POOL="${IP_ADDRESS_PREFIX}.80-${IP_ADDRESS_PREFIX}.90" \
   NNCP_CTLPLANE_IP_ADDRESS_PREFIX="${IP_ADDRESS_PREFIX}" \
@@ -166,7 +166,8 @@ $ make -C "${INSTALL_YAMLS_DIR}" openstack_wait \
   NNCP_DNS_SERVER="${IP_ADDRESS_PREFIX}.1" \
   NNCP_TIMEOUT=600s \
   TIMEOUT=600s \
-  NETWORK_MTU=${MTU}
+  NETWORK_MTU=${MTU} \
+  OPENSTACK_IMG=${OPENSTACK_IMG}
 ```
 
 The interesting things about the previous custom command to deploy the RHOSO
@@ -178,6 +179,21 @@ operators are:
 
 **Note:** An alternative to decreasing the MTU to `1310` would be to increase
 it at the nic level to accommodate the Geneve tunnel header overhead instead.
+
+When using Red Hat operators, we need to immediately remove the "channel: alpha"
+from the subscription that install_yamls adds, because it's not a valid channel
+for RHOSO-18.
+
+```bash
+$ [ "${USE_UPSTREAM}" == 'true' ] || oc patch subscriptions openstack-operator --type json --patch '[{"op":"remove","path":"/spec/channel"}]'
+```
+
+Now we wait for the deployment to complete:
+
+```bash
+$ until $(oc get csv -l operators.coreos.com/openstack-operator.openstack-operators -n openstack-operators | grep -q Succeeded); do sleep 1; done
+```
+
 
 ### Deploy RHOSO control plane
 
@@ -305,6 +321,10 @@ $ make -C "${INSTALL_YAMLS_DIR}" edpm_wait_deploy \
   DATAPLANE_DEFAULT_GW="${IP_ADDRESS_PREFIX}.1" \
   DATAPLANE_SSHD_ALLOWED_RANGES="['0.0.0.0/0']" \
   EDPM_ANSIBLE_USER=${SSH_USER} \
+  DATAPLANE_SKIP_REPO_SETUP=${DATAPLANE_SKIP_REPO_SETUP} \
+  DATAPLANE_REGISTRY_URL=${DATAPLANE_REGISTRY_URL} \
+  DATAPLANE_CONTAINER_TAG=${DATAPLANE_CONTAINER_TAG} \
+  DATAPLANE_CONTAINER_PREFIX=${DATAPLANE_CONTAINER_PREFIX} \
   OUT="${INSTALL_YAMLS_DIR}/out"
 ```
 

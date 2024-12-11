@@ -45,10 +45,23 @@ CRC_CPUS=12
 CRC_RAM=24
 CRC_DISK=100
 
+# Whether to use the upstream bits or Red Hat specific
+USE_UPSTREAM=true
+
+# We can set the Openstack Image if we want to override the defaults that are set automaticallly below based on USE_UPSTREAM
+OPENSTACK_IMG=
+
+# When setting USE_UPSTREAM to a non "true" value we need to set subscription manager credentials (SM_*) and RH registry credentials (RHR_*)
+SM_USERNAME=
+SM_PASSWORD=
+# These default to their SM_ counterparts later on when empty
+RHR_USERNAME=
+RHR_PASSWORD=
 
 ###############################################################################
 # Variables that should be fine as they are
 CRC_VERSION=2.41.0
+OCP_VERSION=4.16
 
 # This is the OCP node (`oc get node`) name
 OCP_NODE_NAME=crc
@@ -101,9 +114,38 @@ INTEL_KERNEL_ARGS="i915.blacklist=1 rd.driver.blacklist=i915"
 ###############################################################################
 # Functions
 
-
 [ -n "${SSH_USER}" ] || SSH_USER=cloud-admin
 [ -n "${SSH_KEY_FILE}" ] || SSH_KEY_FILE="${INSTALL_YAMLS_DIR}/out/edpm/ansibleee-ssh-key-id_rsa"
+
+# Default the Red hat registry usernames and passwords to the same as the subscription manager's
+[ -n "${RHR_USERNAME}" ] || RHR_USERNAME=${SM_USERNAME}
+[ -n "${RHR_PASSWORD}" ] || RHR_PASSWORD=${SM_PASSWORD}
+
+
+if [ "${USE_UPSTREAM}" == 'true' ]; then
+    DATAPLANE_SKIP_REPO_SETUP=
+    DATAPLANE_REGISTRY_URL=quay.io/podified-antelope-centos9
+    DATAPLANE_CONTAINER_TAG=current-podified
+    DATAPLANE_CONTAINER_PREFIX=openstack
+else
+    if [ -z "${SM_USERNAME}" ] || [ -z "${SM_PASSWORD}" ] || [ -z "${RHR_USERNAME}" ] || [ -z "${RHR_PASSWORD}" ]; then
+        echo "Error: To use Red Hat operators you need to set the SM_USERNAME, SM_PASSWORD, RHR_USERNAME and RHR_PASSWORD variables"
+        return 1
+    fi
+    DATAPLANE_SKIP_REPO_SETUP=true
+    DATAPLANE_REGISTRY_URL=
+    DATAPLANE_CONTAINER_TAG=
+    DATAPLANE_CONTAINER_PREFIX=
+fi
+
+# Automatically set the openstack operator image
+if [[ -z "${OPENSTACK_IMG}" ]]; then
+    if [[ "${USE_UPSTREAM}" == 'true' ]]; then
+        OPENSTACK_IMG=quay.io/openstack-k8s-operators/openstack-operator-index:latest
+    else
+        OPENSTACK_IMG=registry.redhat.io/redhat/redhat-operator-index:v4.16
+    fi
+fi
 
 # Add conditional on EDPM_CPU once we support non intel CPUs in this script
 case "${PCI_VENDOR_ID}" in
@@ -160,10 +202,21 @@ function gen_edpm_config {
 
     BASE_DATAPLANE_YAML="$(realpath -m --relative-to=$(realpath ./out/preprovisioned) ${INSTALL_YAMLS_DIR}/out/operator/openstack-operator/config/samples/dataplane/base)"
 
-    sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g" ./templates/preprovisioned/kustomization.yaml > ./out/preprovisioned/kustomization.yaml
+    # Generate RH secrets if necessary
+    KUSTOMIZATION_FILE=kustomization.yaml
+    if [[ "${USE_UPSTREAM}" != 'true' ]]; then
+      REGISTRY_DATA=$(echo -n "{\"registry.redhat.io\": {\"${RHR_USERNAME}\": \"${RHR_PASSWORD}\"}}" | base64 -w0)
+      sed "s/\${SM_USERNAME}/$(echo -n ${SM_USERNAME} | base64 -w0)/g;s/\${SM_PASSWORD}/$(echo -n ${SM_PASSWORD} | base64 -w0)/g;s/\${REGISTRY_DATA}/${REGISTRY_DATA}/g" ./templates/preprovisioned/secrets.yaml > ./out/preprovisioned/secrets.yaml
+
+      KUSTOMIZATION_FILE=kustomization-rh.yaml
+    fi
+
+    sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g;s#\${SECRETS}#${SECRETS}#g" "./templates/preprovisioned/${KUSTOMIZATION_FILE}" > ./out/preprovisioned/kustomization.yaml
     sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${DNS_SERVER}/${INET_DNS_SERVER}/g;s/\${MTU}/${MTU}/g" \
         ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
     sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/os-net-config-template.yaml > ./out/preprovisioned/os-net-config-template.yaml
+
+    cp ./templates/preprovisioned/blacklist.yaml ./out/preprovisioned/
 }
 
 

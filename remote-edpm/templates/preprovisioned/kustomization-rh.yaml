@@ -1,0 +1,68 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: openstack
+
+resources:
+  - tunneling.yaml
+  - blacklist.yaml
+  - secrets.yaml
+
+components:
+- ${BASE_DATAPLANE_YAML}
+
+patches:
+- path: os-net-config-template.yaml
+
+- target:
+    kind: OpenStackDataPlaneNodeSet
+    name: .*
+  patch: |-
+    - op: replace
+      path: /spec/services
+      value:
+        - bootstrap
+        - download-cache
+        - configure-network
+        - validate-network
+        - install-os
+        - configure-os
+        - ssh-known-hosts
+        - run-os
+        - blacklist
+        - reboot-os
+        - install-certs
+        - ovn
+        - tunneling
+        - neutron-metadata
+        - libvirt
+        - nova
+        - telemetry
+    # Set value to `force` to always reboot on `reboot-os` and not only when necessary
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVars/edpm_reboot_strategy
+      value: auto
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVars/edpm_kernel_args
+      value: "${KERNEL_ARGS}"
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVarsFrom/0
+      value:
+        prefix: subscription_manager_
+        secretRef:
+          name: subscription-manager
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVarsFrom/0
+      value:
+        secretRef:
+          name: redhat-registry
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVars/edpm_bootstrap_command
+      value: |
+        subscription-manager register --username {{ subscription_manager_username }} --password {{ subscription_manager_password }}
+        subscription-manager release --set=9.4
+        subscription-manager repos --disable=*
+        subscription-manager repos --enable=rhel-9-for-x86_64-baseos-eus-rpms --enable=rhel-9-for-x86_64-appstream-eus-rpms --enable=rhel-9-for-x86_64-highavailability-eus-rpms --enable=fast-datapath-for-rhel-9-x86_64-rpms --enable=rhoso-18.0-for-rhel-9-x86_64-rpms --enable=rhceph-7-tools-for-rhel-9-x86_64-rpms
+    - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVars/edpm_bootstrap_release_version_package
+      value: []
