@@ -1,0 +1,38 @@
+apiVersion: dataplane.openstack.org/v1beta1
+kind: OpenStackDataPlaneService
+metadata:
+  name: blacklist
+spec:
+  playbookContents: |
+    - hosts: all
+      strategy: linear
+      tasks:
+        - name: Blacklist all GPU kernel modules
+          become: true
+          ansible.builtin.shell: |
+            set -euxo pipefail
+            if [[ ! -e /etc/modprobe.d/blacklist.conf ]]; then
+              echo -e "blacklist amdgpu\ninstall amdgpu /bin/false\nblacklist radeon\ninstall radeon /bin/false\nblacklist noveau\ninstall noveau /bin/false\nblacklist nvidia\ninstall nvidia /bin/false\nblacklist nvidia-drm\ninstall nvidia-drm /bin/false\nblacklist nvidia-modeset\ninstall nvidia-modeset /bin/false\nblacklist nvidia-uvm\ninstall nvidia-uvm /bin/false\nblacklist i915\ninstall i915 /bin/false" >> /etc/modprobe.d/blacklist.conf
+            fi
+
+        - name: Omit drivers in initramfs
+          become: true
+          ansible.builtin.shell: |
+            set -euxo pipefail
+            if [[ ! -e /etc/dracut.conf.d/omit-gpus.conf ]]; then
+              cp /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r).img.$(date +%m-%d-%H%M%S).bak
+              MODNAMES="amdgpu radeon noveau nvidia i915"
+              dracut --omit-drivers "${MODNAMES}" -f
+              echo "omit_dracutmodules+=\" ${MODNAMES} \"" >> /etc/dracut.conf.d/omit-gpus.conf
+            fi
+
+        - name: Update kdump
+          become: true
+          ansible.builtin.shell: |
+            set -euxo pipefail
+            if ! grep 'blacklist=amdgpu' /etc/sysconfig/kdump; then
+              cp /boot/initramfs-$(uname -r)kdump.img /boot/initramfs-$(uname -r)kdump.img.$(date +%m-%d-%H%M%S).bak
+              sed -i '/^KDUMP_COMMANDLINE_APPEND=/s/"$/ rd.driver.blacklist=amdgpu,radeon,noveau,nvidia,i915"/' /etc/sysconfig/kdump
+              kdumpctl restart
+              mkdumprd -f /boot/initramfs-$(uname -r)kdump.img
+            fi

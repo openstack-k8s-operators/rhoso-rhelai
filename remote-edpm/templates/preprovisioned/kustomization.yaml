@@ -5,6 +5,7 @@ namespace: openstack
 
 resources:
   - tunneling.yaml
+  - blacklist.yaml
 
 components:
 - ${BASE_DATAPLANE_YAML}
@@ -27,6 +28,7 @@ patches:
         - configure-os
         - ssh-known-hosts
         - run-os
+        - blacklist
         - reboot-os
         - install-certs
         - ovn
