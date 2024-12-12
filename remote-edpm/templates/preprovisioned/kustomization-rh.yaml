@@ -6,6 +6,7 @@ namespace: openstack
 resources:
   - tunneling.yaml
   - blacklist.yaml
+  - fixdns.yaml
   - secrets.yaml
 
 components:
@@ -38,6 +39,7 @@ patches:
         - libvirt
         - nova
         - telemetry
+        - fixdns
     # Set value to `force` to always reboot on `reboot-os` and not only when necessary
     - op: add
       path: /spec/nodeTemplate/ansible/ansibleVars/edpm_reboot_strategy

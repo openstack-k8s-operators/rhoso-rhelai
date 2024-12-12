@@ -239,8 +239,8 @@ function gen_edpm_config {
     fi
 
     sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g;s#\${SECRETS}#${SECRETS}#g" "./templates/preprovisioned/${KUSTOMIZATION_FILE}" > ./out/preprovisioned/kustomization.yaml
-    sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${DNS_SERVER}/${INET_DNS_SERVER}/g;s/\${MTU}/${MTU}/g" \
-        ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
+    sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${MTU}/${MTU}/g" ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
+    sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/fixdns.yaml > ./out/preprovisioned/fixdns.yaml
     sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/os-net-config-template.yaml > ./out/preprovisioned/os-net-config-template.yaml
 
     cp ./templates/preprovisioned/blacklist.yaml ./out/preprovisioned/
