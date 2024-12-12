@@ -494,3 +494,34 @@ Destroying the whole OCP cluster with the OpenStack control plane is done with:
 ```bash
 $ make -C ${INSTALL_YAMLS_DIR}/devsetup crc_cleanup
 ```
+
+# Q&A
+
+## Fixing connection after a VPN disconnection
+
+When using a VPN on the OCP host it may get disconnected, and when reconnecting
+we may get a new IP and the remote edpm node tunnel will no longer be able to
+connect because it is using the old IP address.
+
+The first thing to do is update `TUN_LOCAL_IP` in the `env-vars` file if
+automatic detection didn't work.
+
+Then source the file again:
+
+```bash
+$ source ./env-vars
+```
+
+Now destroy the remote tunnel:
+
+```bash
+$ ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} sudo ovs-vsctl del-port br-ex gnv0
+```
+
+Change the remote tunnel settings and recreate the tunnel:
+
+```bash
+$ ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} sudo sed -i "s/remote_ip=/remote_ip=${TUN_LOCAL_IP}" /etc/systemd/system/gnv0.service;
+$ ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} sudo systemctl daemon-reload
+$ ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} sudo systemctl restart gnv0.service
+```
