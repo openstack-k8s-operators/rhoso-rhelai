@@ -340,6 +340,46 @@ discussed when generating the configuration:
   to provision them than the one they will be using afterwards
  (`${IP_ADDRESS_PREFIX}.10${EDPM_NODE}`).
 
+The node provisioning may timeout, it doesn't necessarily mean that there is a
+problem, it may just be slow.
+
+We can check the status of the deployment and the node set with:
+
+```bash
+$ oc get osdpd
+$ oc get osdpns
+```
+
+**Note:** We use short versions of `OpenstackDataplaneDeployment` (`osdpd`) and
+`OpenStackDataplaneNodeSet` (`ospdns`) in the commands for convenience.
+
+We can see the jobs that are currently running as well as relevant pods:
+
+```bash
+$ oc get job -l app=openstackansibleee
+$ oc get pod -l app=openstackansibleee
+```
+
+If we want to see how new jobs or pods start as the old ones are completed, we
+can add `--watch` at the end of any of those 2 commands.
+
+And we can then look at the logs of the pod that is currently running or any
+failed pod.
+
+An easy way to follow the logs of the currently running ansible pod is with:
+
+```bash
+$ oc logs -f $(oc get pod -l app=openstackansibleee --field-selector=status.phase==Running -o jsonpath="{.items[0].metadata.name}")
+```
+
+If it has timedout, we need to wait until the `osdpd` is completed and we
+need to run the following command to ensure that the new edpm node is
+discovered by the OpenStack control plane:
+
+```bash
+$ make -C ${INSTALL_YAMLS_DIR} edpm_nova_discover_hosts
+```
+
 ### Check nova compute service
 
 The edpm node should now be up and running and reporting to the control plane.
