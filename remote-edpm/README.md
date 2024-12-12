@@ -465,3 +465,32 @@ $ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./cirros.pe
 ```
 
 **Note:** Remember the VM username is `cirros` and the password is `gocubsgo`.
+
+
+# Cleaning things up
+
+## Restore DNS
+
+We need to restore the DNS before we retry a failed deployment or do another
+deployment run, otherwise it may fail on some of the dnf commands.
+
+```bash
+$ ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} sudo sed -i "s/#nameserver/nameserver/g"
+```
+
+## Destroy tunnels
+
+We can destroy the tunnel on both ends with:
+
+```bash
+$ sudo ip link del name gnv0
+$ ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} ovs-vsctl del-port br-ex gnv0
+```
+
+## Destroy OCP
+
+Destroying the whole OCP cluster with the OpenStack control plane is done with:
+
+```bash
+$ make -C ${INSTALL_YAMLS_DIR}/devsetup crc_cleanup
+```

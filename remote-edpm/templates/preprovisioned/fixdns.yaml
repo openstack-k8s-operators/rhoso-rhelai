@@ -11,7 +11,7 @@ spec:
           become: true
           ansible.builtin.shell: |
             set -euxo pipefail
-            sed -i 's/nameserver ${DNS_SERVER}//g' /etc/resolv.conf
+            sed -i 's/nameserver ${DNS_SERVER}/#nameserver ${DNS_SERVER}/g' /etc/resolv.conf
             sed -i 's/DNS1=${DNS_SERVER}/#DNS1=${DNS_SERVER}/g; s/DNS2=/DNS1=/g' /etc/sysconfig/network-scripts/ifcfg-br-ex
             # Restart all containers so they use the new resolve.conf
             podman ps --noheading | awk '{print $1}' | xargs podman restart
