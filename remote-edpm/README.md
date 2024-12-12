@@ -209,12 +209,10 @@ $ until $(oc get csv -l operators.coreos.com/openstack-operator.openstack-operat
    $ oc label node "${OCP_NODE_NAME}" openstack.org/cinder-lvm=
    ```
 
-3. Create the RHOSO control plane configuration files
+3. Create the RHOSO control plane configuration file (`out/openstack-deployment.yaml`)
 
    ```bash
-   $ sed "s/\${VENDOR_ID}/${PCI_VENDOR_ID}/g;s/\${PRODUCT_ID}/${PCI_PRODUCT_ID}/g" "${CTL_TEMPLATE}" > out/kustomization.yaml
-   $ sed "s/\${MTU}/${MTU}/g;s/\${IP_ADDRESS_PREFIX}/${IP_ADDRESS_PREFIX}/g" "${NETCONFIG_TEMPLATE}" > out/netconfig.yaml
-   $ oc kustomize ./out > ./out/openstack-deployment.yaml
+   $ gen_ctl_config
    ```
 
 4. Deploy the control plane:

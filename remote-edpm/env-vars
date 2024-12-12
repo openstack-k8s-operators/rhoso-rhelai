@@ -27,6 +27,9 @@ INTEL_VENDOR_ID='8086'
   # We can set them both manually here, for example for AMD MI210
 PCI_VENDOR_ID=$AMD_VENDOR_ID
 PCI_PRODUCT_ID='740f'
+# We also need to know if the device is SR-IOV capable. If we know it we can
+# set it to true or false, otherwise it will be automatically detected.
+SRIOV_CAPABLE=
   # For example for NVIDIA RTX4090
   # PCI_VENDOR_ID='10de'
   # PCI_PRODUCT_ID='2684'
@@ -195,8 +198,32 @@ function generate_key {
         ${INSTALL_YAMLS_DIR}/devsetup/scripts/gen-ansibleee-ssh-key.sh
 }
 
+
+function get_pci_type {
+    if [ -z "${SRIOV_CAPABLE}" ]; then
+        PCI_INFO="$(ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} sudo lspci -v -d ${PCI_VENDOR_ID}:${PCI_PRODUCT_ID})"
+        if [ $? -eq 1 ]; then
+          echo "Error: Could not discover the type of PCI device by doing SSH into remote host"
+          return 1
+        fi
+        if [[ "${PCI_INFO}" =~ 'SR-IOV' ]]; then
+            SRIOV_CAPABLE=true
+        else
+            SRIOV_CAPABLE=false
+        fi
+    fi
+    if [ "${SRIOV_CAPABLE}" == "true" ]; then
+        echo 'type-PF'
+    else
+        echo 'type-PCI'
+    fi
+}
+
+
 function gen_edpm_config {
-    sed "s/\${VENDOR_ID}/${PCI_VENDOR_ID}/g;s/\${PRODUCT_ID}/${PCI_PRODUCT_ID}/g" ./templates/nova-compute.conf > ./out/nova-compute.conf
+    # Determine if it's a type-PF or type-PCI device
+    PCI_TYPE=$(get_pci_type) || return $?
+    sed "s/\${VENDOR_ID}/${PCI_VENDOR_ID}/g;s/\${PRODUCT_ID}/${PCI_PRODUCT_ID}/g;s/\${PCI_TYPE}/${PCI_TYPE}/g" ./templates/nova-compute.conf > ./out/nova-compute.conf
 
     mkdir -p out/preprovisioned
 
@@ -241,4 +268,14 @@ function change_cluster_mtu {
     oc patch Network.operator.openshift.io cluster --type=merge --patch "{\"spec\": { \"migration\": null, \"defaultNetwork\":{ \"ovnKubernetesConfig\": { \"mtu\": ${CLUSTER_MTU} }}}}"
 
     wait_mc_applied
+}
+
+
+function gen_ctl_config {
+    # Determine if it's a type-PF or type-PCI device
+    PCI_TYPE=$(get_pci_type) || return $?
+    sed "s/\${VENDOR_ID}/${PCI_VENDOR_ID}/g;s/\${PRODUCT_ID}/${PCI_PRODUCT_ID}/g;s/\${PCI_TYPE}/${PCI_TYPE}/g" "${CTL_TEMPLATE}" > out/kustomization.yaml
+    sed "s/\${MTU}/${MTU}/g;s/\${IP_ADDRESS_PREFIX}/${IP_ADDRESS_PREFIX}/g" "${NETCONFIG_TEMPLATE}" > out/netconfig.yaml
+
+    oc kustomize ./out > ./out/openstack-deployment.yaml
 }
