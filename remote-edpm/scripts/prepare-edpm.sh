@@ -17,7 +17,8 @@ done
 [ -n "${SSH_KEY}" ] || (echo "Provide the SSH_KEY contents" && exit 1)
 
 # Install minimum packages required by the ansible runner
-sudo dnf -y install tar curl
+which tar || sudo dnf -y install tar
+which curl || sudo dnf -y install curl
 
 
 # Ensure user exists
