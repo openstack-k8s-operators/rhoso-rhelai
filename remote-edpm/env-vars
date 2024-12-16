@@ -76,6 +76,7 @@ VIRT_NETWORK=rhoso
 # MTU=1450 ==> Only using geneve tunnel on same network
 # MTU=1310 ==> When using geneve tunnel on top of VPN tunnel
 MTU=1310
+VLAN_MTU=$(( $MTU - 4 ))
 
 # Template used for the RHOSO control plane
 CTL_TEMPLATE=./templates/kustomization-nw-isolation-no-cinder.yaml
@@ -275,7 +276,7 @@ function gen_ctl_config {
     # Determine if it's a type-PF or type-PCI device
     PCI_TYPE=$(get_pci_type) || return $?
     sed "s/\${VENDOR_ID}/${PCI_VENDOR_ID}/g;s/\${PRODUCT_ID}/${PCI_PRODUCT_ID}/g;s/\${PCI_TYPE}/${PCI_TYPE}/g" "${CTL_TEMPLATE}" > out/kustomization.yaml
-    sed "s/\${MTU}/${MTU}/g;s/\${IP_ADDRESS_PREFIX}/${IP_ADDRESS_PREFIX}/g" "${NETCONFIG_TEMPLATE}" > out/netconfig.yaml
+    sed "s/\${MTU}/${MTU}/g;s/\${VLAN_MTU}/${VLAN_MTU}/g;s/\${IP_ADDRESS_PREFIX}/${IP_ADDRESS_PREFIX}/g" "${NETCONFIG_TEMPLATE}" > out/netconfig.yaml
 
     oc kustomize ./out > ./out/openstack-deployment.yaml
 }

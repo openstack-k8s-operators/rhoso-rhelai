@@ -17,7 +17,7 @@ spec:
       cidr: ${IP_ADDRESS_PREFIX}.0/24
       gateway: ${IP_ADDRESS_PREFIX}.1
   - name: internalapi
-    mtu: ${MTU}
+    mtu: ${VLAN_MTU}
     dnsDomain: internalapi.example.com
     subnets:
     - name: subnet1
@@ -37,7 +37,7 @@ spec:
       cidr: 10.0.0.0/24
       gateway: 10.0.0.1
   - name: storage
-    mtu: ${MTU}
+    mtu: ${VLAN_MTU}
     dnsDomain: storage.example.com
     subnets:
     - name: subnet1
@@ -47,7 +47,7 @@ spec:
       cidr: 172.18.0.0/24
       vlan: 21
   - name: storagemgmt
-    mtu: ${MTU}
+    mtu: ${VLAN_MTU}
     dnsDomain: storagemgmt.example.com
     subnets:
     - name: subnet1
@@ -57,7 +57,7 @@ spec:
       cidr: 172.20.0.0/24
       vlan: 23
   - name: tenant
-    mtu: ${MTU}
+    mtu: ${VLAN_MTU}
     dnsDomain: tenant.example.com
     subnets:
     - name: subnet1
