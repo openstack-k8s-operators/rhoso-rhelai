@@ -12,6 +12,11 @@ spec:
           ansible.builtin.shell: |
             set -euxo pipefail
 
+            if [ -e "/etc/systemd/system/${TUN_NAME}.service" ]; then
+                ovs-vsctl del-port br-ex ${TUN_NAME} || true
+                EXISTS=true
+            fi
+
             cat <<EOF > "/etc/systemd/system/${TUN_NAME}.service"
             [Unit]
             Description=Create ${TUN_NAME} bridge
@@ -24,4 +29,9 @@ spec:
             [Install]
             WantedBy=multi-user.target edpm_ovn_controller.service
             EOF
-            systemctl enable --now "${TUN_NAME}.service"
+            if [ -z "${EXISTS}" ]; then
+                systemctl enable --now "${TUN_NAME}.service"
+            else
+                systemctl daemon-reload
+                systemctl restart "${TUN_NAME}.service"
+            fi
