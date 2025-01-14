@@ -56,7 +56,7 @@ help: ## Display this help.
 ##@ PREPARATIONS
 .PHONY: download_tools
 download_tools: ## Installs basic tools, clones or updates the install_yaml repo, and then runs install_yaml's devsetup download_tools
-	@sudo dnf -y install git ansible-core libvirt-daemon-common
+	@sudo dnf -y install git ansible-core libvirt-daemon-common pciutils
 ifeq (,$(wildcard $(INSTALL_YAMLS_DIR)))
 	@git clone https://github.com/openstack-k8s-operators/install_yamls.git $(INSTALL_YAMLS_DIR)
 else
