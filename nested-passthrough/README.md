@@ -116,7 +116,7 @@ Now we need to rebuild GRUB configuration file and reboot.
 
 ```
 $ sudo grub2-mkconfig -o /etc/grub2.cfg
-$ sudo grub2-mkconfig -o /boot/efi/EFI/centos/grub.cfg
+$ sudo grub2-mkconfig -o /boot/efi/EFI/centos/grub.cfg || sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 $ sudo shutdown -r now
 ```
 
