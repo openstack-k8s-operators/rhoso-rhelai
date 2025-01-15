@@ -1,0 +1,33 @@
+---
+# Copyright 2024 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+- name: Get PCI ID for GPU
+  ansible.builtin.shell:
+    cmd: "lspci -n | grep {{ gpu_vendor_id }} | cut -f3 -d' '| cut -f2 -d: | head -n1"
+  register:
+    pci_id
+
+- name: Set GPU PCI Device ID fact
+  ansible.builtin.set_fact:
+    gpu_pci_id: "{{ pci_id.stdout }}"
+    cacheable: true
+  when:
+    - gpu_pci_id == ""
+
+- name: Set vendor ID as fact
+  ansible.builtin.set_fact:
+    gpu_pci_vendor_id: "{{ gpu_vendor_id }}"
+    cacheable: true
