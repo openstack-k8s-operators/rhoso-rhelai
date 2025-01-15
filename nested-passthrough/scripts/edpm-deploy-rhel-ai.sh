@@ -101,8 +101,8 @@ openstack server list --long
 echo "Pinging $FIP_ADDR for 120 seconds until it responds"
 timeout 120 bash -c "while true; do if ping -c1 -i1 $FIP_ADDR &>/dev/null; then echo 'Machine is up and running up'; break; fi; done"
 
-echo "Changing the default DNS nameserver in the instance to 1.1.1.1"
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${FIP_ADDR} 'echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf'
+echo "Changing the default DNS nameserver in the instance to 192.168.122.80
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${FIP_ADDR} 'echo "nameserver 192.168.122.80" | sudo tee /etc/resolv.conf'
 
 if [[ -e ~/pull-secret ]]; then
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${FIP_ADDR} 'mkdir ~/.docker'
