@@ -441,21 +441,17 @@ $ chmod 600 cirros.pem
 Finally create the VM
 
 ```
-$ openstack server create --flavor gpu --image cirros --key-name cirros --nic net-id=private cirros --security-group basic --wait
+$ openstack server create --flavor gpu --image cirros --key-name cirros --nic net-id=public,v4-fixed-ip=192.168.140.220 cirros --security-group basic --wait
 ```
 
 The machine should quickly become ready, although it will depend on the
 connection speed between your OCP cluster and the remote EDPM node, because
 the glance image has to go from your local machine to the remote one.
 
-Now we will assign a static floating IP (so we don't have to check what IP was
-assigned) and use that address to SSH into the VM:
+The VM has been assigned a static IP, so we can SSH to it:
 
 ```bash
-$ FIP_ADDR=192.168.140.222
-$ openstack floating ip create --floating-ip-address $FIP_ADDR public
-$ openstack server add floating ip cirros $FIP_ADDR
-$ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./cirros.pem cirros@${FIP_ADDR}
+$ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./cirros.pem cirros@192.168.140.220
 ```
 
 **Note:** Remember the VM username is `cirros` and the password is `gocubsgo`.
