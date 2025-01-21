@@ -12,6 +12,7 @@ spec:
           ansible.builtin.shell: |
             set -euxo pipefail
 
+            EXISTS=false
             if [ -e "/etc/systemd/system/${TUN_NAME}.service" ]; then
                 ovs-vsctl del-port br-ex ${TUN_NAME} || true
                 EXISTS=true
