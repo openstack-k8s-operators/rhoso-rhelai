@@ -5,10 +5,10 @@ set -a
 # Variables you have to modify
 
 # Your pull secret to get CRC
-PULL_SECRET=/home/geguileo/work/pull-secret
+PULL_SECRET=$(realpath ~/pull-secret)
 
 # The directory were we have the install_yamls repository
-INSTALL_YAMLS_DIR=/home/geguileo/work/install_yamls
+INSTALL_YAMLS_DIR=$(realpath ~/install_yamls)
 
 # The remote EDPM host address and SSH arguments to connect to it
 REMOTE_EDPM_IP=192.168.1.13
