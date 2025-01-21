@@ -1,0 +1,17 @@
+apiVersion: dataplane.openstack.org/v1beta1
+kind: OpenStackDataPlaneService
+metadata:
+  name: nat
+spec:
+  playbookContents: |
+    - hosts: all
+      strategy: linear
+      tasks:
+        - name: Enable NAT for the br-ex bridge
+          become: true
+          ansible.builtin.shell: |
+            set -euxo pipefail
+            iface=$(ip -br -4 a | grep ${EDPM_IP} | awk '{print $1}')
+            iptables -t nat -A POSTROUTING -s ${IP_ADDRESS_PREFIX}.0/24 -o ${iface} -j MASQUERADE
+            iptables -A FORWARD -i br-ex -o ${iface} -j ACCEPT
+            iptables -A FORWARD -i ${iface} -o br-ex -m state --state RELATED,ESTABLISHED -j ACCEPT
