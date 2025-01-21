@@ -421,14 +421,8 @@ $ openstack flavor create --ram 4096 --vcpus 12 --disk 50 gpu \
 Now we create the networks, security group, etc.
 
 ```bash
-$ openstack network create private --share
-$ openstack subnet create priv_sub --subnet-range 192.168.0.0/24 --network private
 $ openstack network create public --external --provider-network-type flat --provider-physical-network datacentre
-$ openstack subnet create public_subnet --subnet-range 192.168.140.0/24 --allocation-pool start=192.168.140.171,end=192.168.140.250 --gateway 192.168.140.1 --dhcp --network public
-
-$ openstack router create priv_router
-$ openstack router add subnet priv_router priv_sub
-$ openstack router set priv_router --external-gateway public
+$ openstack subnet create public_subnet --subnet-range "${IP_ADDRESS_PREFIX}.0/24" --allocation-pool "start=${IP_ADDRESS_PREFIX}.171,end=${IP_ADDRESS_PREFIX}.250 --gateway "${IP_ADDRESS_PREFIX}.100" --dns-nameserver "${IP_ADDRESS_PREFIX}.80" --host-route destination="${IP_ADDRESS_PREFIX}.0/24,gateway=${IP_ADDRESS_PREFIX}.1" --dhcp --network public
 
 $ openstack security group create basic
 $ openstack security group rule create basic --protocol icmp --ingress --icmp-type -1
