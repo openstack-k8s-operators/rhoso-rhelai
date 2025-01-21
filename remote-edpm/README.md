@@ -49,9 +49,8 @@ edpm nodes that connect to the OCP cluster and possible local EDPM nodes:
 
   ```bash
   $ sudo dnf -y install git make ansible-core libvirt-daemon-common
-  $ git clone https://github.com/Akrog/install_yamls.git
-  $ cd install_yamls
-  $ git checkout tunnel-fixes
+  $ git clone --branch tunnel-fixes https://github.com/Akrog/install_yamls.git
+  $ cd install_yamls/devsetup
   $ make download_tools
   ```
 
