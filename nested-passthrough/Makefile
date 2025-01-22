@@ -101,7 +101,7 @@ deploy_controlplane: ## Deploy OCP cluster using CRC, deploy OSP operators, and 
 	$(MAKE) prepare_controlplane_config && \
 	sleep 60 && \
 	echo Deploying RHOSO control plane && \
-	OPENSTACK_CR=$$(realpath ./out/openstack-deployment.yaml) make -C $(INSTALL_YAMLS_DIR) openstack_deploy && \
+	OPENSTACK_CR=$$(realpath ./out/openstack-deployment.yaml) OPERATOR_BASE_DIR=$$(realpath ./out/operator) make -C $(INSTALL_YAMLS_DIR) openstack_init openstack_deploy && \
 	echo Waiting for control plane to be ready && \
 	oc wait openstackcontrolplane openstack --for condition=Ready --timeout=$(TIMEOUT_CTRL) && \
 	echo "Run eval $$(crc oc-env) to be able to access the OCP cluster using the oc command"
