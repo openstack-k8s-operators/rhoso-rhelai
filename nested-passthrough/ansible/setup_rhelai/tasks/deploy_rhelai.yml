@@ -1,0 +1,64 @@
+---
+# Copyright 2024 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+- name: Copy http-serve.sh script
+  ansible.builtin.copy:
+    src: scripts/http-serve.sh
+    dest: ~/http-serve.sh
+    mode: "0744"
+
+- name: Copy edpm-deploy-rhel-ai.sh script
+  ansible.builtin.copy:
+    src: scripts/edpm-deploy-rhel-ai.sh
+    dest: ~/edpm-deploy-rhel-ai.sh
+    mode: "0744"
+
+- name: Check for RHELAI image
+  ansible.builtin.stat:
+    path: ~/rhel-ai-disk.qcow2
+  register: rhelai_img
+
+# Download only when we have to
+- name: Download RHELAI image
+  ansible.builtin.get_url:
+    dest: ~/rhel-ai-disk.qcow2
+    mode: "0644"
+    url: "{{ rhelai_image_url }}"
+  when: rhelai_img.isreg is defined and rhelai_img.isreg
+
+- name: Determine number of GPUs
+  block:
+    - ansible.builtin.shell:
+        cmd: |
+          lspci -n -d {{ gpu_pci_vendor_id }}:{{ gpu_pci_id }} | wc -l
+      register: n_gpus
+    - ansible.builtin.set_fact:
+        ai_node_gpus: "{{ n_gpus.stdout }}"
+  when: ai_node_gpus == "all"
+
+# Since we are using ad-hoc http server for this, we need to run all of these during a single session
+# Otherwise we would have to start a proper service, or just copy the image.
+- name: Start http server, deploy RHELAI and stop the server
+  ansible.builtin.shell:
+    chdir: ~/
+    cmd: |
+      IMAGE_PATH=~/ PID_PATH=~/http_serve.pid ~/http-serve.sh start && \
+      source ~/oclogin && \
+      oc cp ~/edpm-deploy-rhel-ai.sh openstackclient:/tmp/ && \
+      oc cp {{ crc_pull_secret }} openstackclient:/home/cloud-admin/pull-secret && \
+      oc rsh openstackclient bash -c \
+      "NUM_GPUS={{ ai_node_gpus }} VM_NAME={{ ai_vm_name }} CPUS={{ ai_node_cpus }} RAM={{ 1024 * ai_node_ram }} DISK={{ ai_node_disk }} /tmp/edpm-deploy-rhel-ai.sh" && \
+      ~/http-serve.sh stop

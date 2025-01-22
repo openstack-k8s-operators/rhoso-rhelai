@@ -83,7 +83,7 @@ openstack server show ${VM_NAME} || {
             sleep 1
         done
         if [[ "$(openstack image show -c status -f value ${IMAGE_NAME})" != "active" ]]; then
-            print "Error importing image ${IMAGE_NAME}"
+            echo "Error importing image ${IMAGE_NAME}"
             exit 1
         fi
     fi

@@ -1,12 +1,14 @@
 #!/bin/bash
-set -e
+set -ex
 
 ACTION="${1:-start}"
 ZONE="${ZONE:-libvirt}"
 BIND="${BIND:-192.168.130.1}"
 PORT="${PORT:-80}"
+IMAGE_PATH="${IMAGE_PATH:-./out}" # Location of the RHELAI image
+PID_PATH="${PID_PATH:-./out/http.pid}"
 
-if [[ -e out/http.pid ]] && grep http.server /proc/$(cat out/http.pid)/cmdline 2>/dev/null; then
+if [[ -e ${PID_PATH} ]] && grep http.server /proc/$(cat ${PID_PATH})/cmdline 2>/dev/null; then
     GOOD_PID=true
 fi
 
@@ -30,8 +32,8 @@ if [[ "${ACTION}" == "start" ]]; then
         if [[ -n "$BIND" ]]; then
             BIND_ARG="-b $BIND"
         fi
-        sudo $PYTHON -m http.server $PORT -d ./out ${BIND_ARG} &
-        echo $! > out/http.pid
+        sudo $PYTHON -m http.server $PORT -d ${IMAGE_PATH} ${BIND_ARG} &
+        echo $! > ${PID_PATH}
     else
         echo 'HTTP server already running'
     fi
@@ -41,9 +43,9 @@ elif [[ "${ACTION}" == "stop" ]]; then
         sudo firewall-cmd --zone=${ZONE} --remove-port=${PORT}/tcp
     fi
     if [[ -n "${GOOD_PID}" ]]; then
-        sudo kill $(cat out/http.pid)
+        sudo kill $(cat ${PID_PATH})
     fi
-    rm out/http.pid 2>/dev/null || true
+    rm ${PID_PATH} 2>/dev/null || true
 else
     echo "Unknown action: Please use start or stop"
     exit 1
