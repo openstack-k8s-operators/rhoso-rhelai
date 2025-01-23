@@ -14,6 +14,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+- name: Create initialization resources
+  ansible.builtin.shell:
+    chdir: "~/install_yamls"
+    cmd: |
+      source ~/oclogin && \
+      OPENSTACK_CR=$(realpath ./out/openstack-deployment.yaml) OPERATOR_BASE_DIR=$(realpath ./out/operator) make openstack_init
+
 - name: Deploy control plane
   ansible.builtin.shell:
     chdir: "~/install_yamls"
