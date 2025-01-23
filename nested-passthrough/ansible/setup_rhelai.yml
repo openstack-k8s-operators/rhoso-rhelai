@@ -7,9 +7,6 @@
   tasks:
     - ansible.builtin.import_role:
         name: setup_rhelai
-        tasks_from: main.yml
-    - ansible.builtin.import_role:
-        name: setup_rhelai
         tasks_from: download_tools.yml
     - ansible.builtin.import_role:
         name: setup_rhelai
