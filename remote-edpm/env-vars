@@ -27,8 +27,15 @@ INTEL_VENDOR_ID='8086'
   # We can set them both manually here, for example for AMD MI210
 PCI_VENDOR_ID=$AMD_VENDOR_ID
 PCI_PRODUCT_ID='740f'
+
+# If we want to use a VF instead of the actual PCI device.
+# The device must be SR-IOV capable and have the VF automatically created.
+# Beware that some vendors change the PCI Product ID on the VF devices, e.g. MI210 changes from 740f on the PF to 7410 on the VF.
+USE_SRIOV_VF=false
+
 # We also need to know if the device is SR-IOV capable. If we know it we can
-# set it to true or false, otherwise it will be automatically detected.
+# set it to true or false, otherwise it will be automatically detected if
+# USE_SRIOV_VF is not set to true
 SRIOV_CAPABLE=
   # For example for NVIDIA RTX4090
   # PCI_VENDOR_ID='10de'
@@ -109,7 +116,11 @@ EDPM_CPU=intel
 EDPM_ADD_KERNEL_ARGS=
 
 # Add conditional on EDPM_CPU once we support non intel CPUs in this script
+if [ "${USE_SRIOV_VF}" == 'false' ]; then
 IOMMU_KERNEL_ARGS="intel_iommu=on iommu=pt vfio_pci.ids=${PCI_VENDOR_ID}:${PCI_PRODUCT_ID} rd.driver.pre=vfio_pci modules-load=vfio,vfio-pci,vfio_iommu_type1,vfio_pci_vfio_virqfd"
+else
+IOMMU_KERNEL_ARGS="intel_iommu=on iommu=pt modules-load=vfio,vfio-pci,vfio_iommu_type1,vfio_pci_vfio_virqfd"
+fi
 
 NVIDIA_KERNEL_ARGS="noveau.blacklist=1 nvidia.blacklist=1 nvidia-drm.blacklist=1 nvidia-modeset.blacklist=1 nvidia-uvm.blacklist=1 rd.driver.blacklist=nouveau,nvidia,nvidia-drm,nvidia-modeset,nvidia-uvm"
 AMD_KERNEL_ARGS="amdgpu.blacklist=1 radeon.blacklist=1 rd.driver.blacklist=amdgpu,radeon"
@@ -201,22 +212,26 @@ function generate_key {
 
 
 function get_pci_type {
-    if [ -z "${SRIOV_CAPABLE}" ]; then
-        PCI_INFO="$(ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} sudo lspci -v -d ${PCI_VENDOR_ID}:${PCI_PRODUCT_ID})"
-        if [ $? -eq 1 ]; then
-          echo "Error: Could not discover the type of PCI device by doing SSH into remote host"
-          return 1
-        fi
-        if [[ "${PCI_INFO}" =~ 'SR-IOV' ]]; then
-            SRIOV_CAPABLE=true
-        else
-            SRIOV_CAPABLE=false
-        fi
-    fi
-    if [ "${SRIOV_CAPABLE}" == "true" ]; then
-        echo 'type-PF'
+    if [ ${USE_SRIOV_VF} == "true" ]; then
+        echo 'type-VF'
     else
-        echo 'type-PCI'
+      if [ -z "${SRIOV_CAPABLE}" ]; then
+          PCI_INFO="$(ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} sudo lspci -v -d ${PCI_VENDOR_ID}:${PCI_PRODUCT_ID})"
+          if [ $? -eq 1 ]; then
+            echo "Error: Could not discover the type of PCI device by doing SSH into remote host"
+            return 1
+          fi
+          if [[ "${PCI_INFO}" =~ 'SR-IOV' ]]; then
+              SRIOV_CAPABLE=true
+          else
+              SRIOV_CAPABLE=false
+          fi
+      fi
+      if [ "${SRIOV_CAPABLE}" == "true" ]; then
+          echo 'type-PF'
+      else
+          echo 'type-PCI'
+      fi
     fi
 }
 
