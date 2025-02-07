@@ -8,6 +8,7 @@ resources:
   - blacklist.yaml
   - fixdns.yaml
   - secrets.yaml
+  - nat.yaml
 
 components:
 - ${BASE_DATAPLANE_YAML}
@@ -40,6 +41,7 @@ patches:
         - nova
         - telemetry
         - fixdns
+        - nat
     # Set value to `force` to always reboot on `reboot-os` and not only when necessary
     - op: add
       path: /spec/nodeTemplate/ansible/ansibleVars/edpm_reboot_strategy
