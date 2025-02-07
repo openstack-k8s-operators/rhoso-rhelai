@@ -59,6 +59,9 @@ patches:
         net.ipv6.conf.lo.disable_ipv6:
           value: 1
     - op: add
+      path: /spec/nodeTemplate/ansible/ansibleVars/ansible_ssh_common_args
+      value: "${SSH_ARGS}"
+    - op: add
       path: /spec/nodeTemplate/ansible/ansibleVarsFrom/0
       value:
         prefix: subscription_manager_

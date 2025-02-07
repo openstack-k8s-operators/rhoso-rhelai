@@ -18,21 +18,45 @@ spec:
                 EXISTS=true
             fi
 
+            SCRIPT_FILE="/usr/local/bin/${TUN_NAME}.sh"
+            cat <<EOF > "/tmp/${TUN_NAME}.sh"
+            #!/bin/bash
+            set -ex
+            if [ -n "${JUMP_BOX}" ]; then
+                sshuttle -D --pidfile="/tmp/sshuttle.pid" -r "${REMOTE_SSH_USER}@localhost" -e "ssh -p 9000 -i /home/${SSH_USER}/.ssh/rhoso_geneve" ${TUN_IP}/32
+            fi
+            ovs-vsctl --may-exist add-port {{ neutron_physical_bridge_name }} ${TUN_NAME} -- set interface ${TUN_NAME} mtu_request=${MTU} type=geneve options:remote_ip=${TUN_IP} options:key=${GNV_ID}
+            EOF
+
+            chmod +x "/tmp/${TUN_NAME}.sh"
+            sudo mv "/tmp/${TUN_NAME}.sh" "${SCRIPT_FILE}"
+            sudo chown root:root "${SCRIPT_FILE}"
+            sudo /sbin/restorecon -v "${SCRIPT_FILE}"
+
+
             cat <<EOF > "/etc/systemd/system/${TUN_NAME}.service"
             [Unit]
             Description=Create ${TUN_NAME} bridge
             Requires=network-online.target
             After=network-online.target
             [Service]
-            ExecStart=ovs-vsctl --may-exist add-port {{ neutron_physical_bridge_name }} ${TUN_NAME} -- set interface ${TUN_NAME} mtu_request=${MTU} type=geneve options:remote_ip=${TUN_IP} options:key=${GNV_ID}
+            ExecStart=${SCRIPT_FILE}
             RemainAfterExit=true
             Type=oneshot
             [Install]
             WantedBy=multi-user.target edpm_ovn_controller.service
             EOF
+
+
             if [ "${EXISTS}" == "false" ]; then
                 systemctl enable --now "${TUN_NAME}.service"
             else
                 systemctl daemon-reload
                 systemctl restart "${TUN_NAME}.service"
             fi
+
+            # I don't remember why this is necessary
+            sed -i 's/nameserver ${DNS_SERVER}//g' /etc/resolv.conf
+
+            # I don't think this is necessary
+            systemctl restart edpm_ovn_controller

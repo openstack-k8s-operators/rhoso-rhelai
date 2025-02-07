@@ -43,6 +43,9 @@ SRIOV_CAPABLE=
   # Or we could just set the PCI_VENDOR_ID as above and automatically get the producing ID with
   # PCI_PRODUCT_ID=$(ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} "sudo dnf -y install pciutils && lspci -n |grep ${PCI_VENDOR_ID} | cut -f3 -d' '| cut -f2 -d: | head -n1")
 
+# Jump box to use, for example `geguileo@192.168.1.22`.
+# Multiple jump boxes can be set using comma (`,`) as a separator
+JUMP_BOX=
 
 ###############################################################################
 # Variables you should check
@@ -126,6 +129,10 @@ NVIDIA_KERNEL_ARGS="noveau.blacklist=1 nvidia.blacklist=1 nvidia-drm.blacklist=1
 AMD_KERNEL_ARGS="amdgpu.blacklist=1 radeon.blacklist=1 rd.driver.blacklist=amdgpu,radeon"
 INTEL_KERNEL_ARGS="i915.blacklist=1 rd.driver.blacklist=i915"
 
+# For sshuttle when using a JUMP_BOX
+TMARK='0x1'
+SSHUTTLE_PID_FILE="$(realpath out/sshuttle.pid)"
+
 ###############################################################################
 # Functions
 
@@ -199,6 +206,10 @@ if [ -n "${SSH_KEY_FILE}" ] && [ "${SSH_KEY_FILE}" != "${DEFAULT_SSH_KEY_FILE}" 
     return 1
 fi
 
+if [ -n "${JUMP_BOX}" ]; then
+    SSH_ARGS="${SSH_ARGS} -J ${JUMP_BOX}"
+fi
+
 
 function generate_key {
     OUTPUT_DIR="${INSTALL_YAMLS_DIR}/out/edpm"
@@ -236,6 +247,18 @@ function get_pci_type {
 }
 
 
+function prepare_edpm {
+    ssh ${SSH_ARGS} ${REMOTE_EDPM_IP} \
+        bash -s \
+        SSH_USER=${SSH_USER} \
+        SSH_PUB_KEY="'$(cat ${SSH_KEY_FILE}.pub)'" \
+        SSH_PRIV_KEY="'$(cat ${SSH_KEY_FILE})'" \
+        JUMP_BOX="${JUMP_BOX}" \
+        TMARK="${TMARK}" \
+        < ./scripts/prepare-edpm.sh
+}
+
+
 function gen_edpm_config {
     # Determine if it's a type-PF or type-PCI device
     PCI_TYPE=$(get_pci_type) || return $?
@@ -244,6 +267,10 @@ function gen_edpm_config {
     mkdir -p out/preprovisioned
 
     BASE_DATAPLANE_YAML="$(realpath -m --relative-to=$(realpath ./out/preprovisioned) ${INSTALL_YAMLS_DIR}/out/operator/openstack-operator/config/samples/dataplane/base)"
+    EDPM_SSH_ARGS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    if [ -n "${JUMP_BOX}" ]; then
+        EDPM_SSH_ARGS="${EDPM_SSH_ARGS} -J ${JUMP_BOX}"
+    fi
 
     # Generate RH secrets if necessary
     KUSTOMIZATION_FILE=kustomization.yaml
@@ -254,8 +281,14 @@ function gen_edpm_config {
       KUSTOMIZATION_FILE=kustomization-rh.yaml
     fi
 
-    sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g;s#\${SECRETS}#${SECRETS}#g" "./templates/preprovisioned/${KUSTOMIZATION_FILE}" > ./out/preprovisioned/kustomization.yaml
-    sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${MTU}/${MTU}/g" ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
+    sed "s#\${BASE_DATAPLANE_YAML}#${BASE_DATAPLANE_YAML}#g;s#\${KERNEL_ARGS}#${EDPM_KERNEL_ARGS}#g;s#\${SECRETS}#${SECRETS}#g;s#\${SSH_ARGS}#${EDPM_SSH_ARGS}#g" \
+        "./templates/preprovisioned/${KUSTOMIZATION_FILE}" > ./out/preprovisioned/kustomization.yaml
+
+    # No idea what the next file was meant to do, as I don't have the mtu.yaml file around
+    # sed "s/\${MTU}/${MTU}/g;s/\${NODE_NAME}/${OCP_NODE_NAME}/g" ./templates/preprovisioned/mtu.yaml > ./out/preprovisioned/mtu.yaml
+    #
+    sed "s/\${TUN_IP}/${TUN_LOCAL_IP}/g;s/\${GNV_ID}/${GNV_ID}/g;s/\${TUN_NAME}/${TUN_NAME}/g;s/\${MTU}/${MTU}/g;s/\${DNS_SERVER}/${INET_DNS_SERVER}/g;s/\${REMOTE_SSH_USER}/$(whoami)/g;s/\${SSH_USER}/${SSH_USER}/g;s/\${JUMP_BOX}/${JUMP_BOX}/g" \
+        ./templates/preprovisioned/tunneling.yaml > ./out/preprovisioned/tunneling.yaml
     sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/fixdns.yaml > ./out/preprovisioned/fixdns.yaml
     sed "s/\${IP_ADDRESS_PREFIX}/${IP_ADDRESS_PREFIX}/g;s/\${EDPM_IP}/${REMOTE_EDPM_IP}/g" ./templates/preprovisioned/nat.yaml > ./out/preprovisioned/nat.yaml
     sed "s/\${DNS_SERVER}/${INET_DNS_SERVER}/g" ./templates/preprovisioned/os-net-config-template.yaml > ./out/preprovisioned/os-net-config-template.yaml
