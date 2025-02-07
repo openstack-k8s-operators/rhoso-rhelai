@@ -6,6 +6,9 @@ if ! ip link show "${TUN_NAME}" 2>/dev/null; then
     if ! which brctl >/dev/null 2>&1; then
         if [[ "$(cat /etc/redhat-release)" == CentOS* ]]; then
             sudo dnf -y install epel-release
+        elif [[ "$(cat /etc/redhat-release)" == *Enterprise* ]]; then
+            major_version=$(rpm -qf --qf '%{version}\n' /etc/redhat-release | grep -o '^[0-9]*')
+            sudo dnf -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${major_version}.noarch.rpm"
         fi
         sudo dnf -y install bridge-utils
     fi
