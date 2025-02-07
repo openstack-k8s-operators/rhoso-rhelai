@@ -55,3 +55,8 @@ sudo chown -R "${SSH_USER}:${SSH_USER}" "${SSH_HOME}/.ssh"
 sudo chmod 0600 "${AUTHORIZED_KEYS}"
 
 sudo loginctl enable-linger "${SSH_USER}"
+
+# Remove .connection files to avoid them forcing ipv6 and explicitly disable ipv6
+sudo \rm -f /etc/NetworkManager/system-connections/*.nmconnection
+while IFS= read -r eth; do sudo nmcli connection modify "$eth" ipv6.method "disabled"; done <<< $(nmcli -t -f=NAME conn show | grep -v '^lo$')
+sudo systemctl restart NetworkManager
