@@ -30,7 +30,7 @@ spec:
             [Install]
             WantedBy=multi-user.target edpm_ovn_controller.service
             EOF
-            if [ -z "${EXISTS}" ]; then
+            if [ "${EXISTS}" == "false" ]; then
                 systemctl enable --now "${TUN_NAME}.service"
             else
                 systemctl daemon-reload
