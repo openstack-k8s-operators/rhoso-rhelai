@@ -92,20 +92,26 @@ openstack server show ${VM_NAME} || {
         echo "Failed to create instance ${VM_NAME}"
         exit 2
     fi
-
-    openstack floating ip create --floating-ip-address $FIP_ADDR public
-    openstack server add floating ip ${VM_NAME} $FIP_ADDR
 }
+
+openstack floating ip show "${FIP_ADDR}" || {
+    openstack floating ip create --floating-ip-address "${FIP_ADDR}" public
+}
+openstack server add floating ip "${VM_NAME}" "${FIP_ADDR}"
+
 openstack server list --long
 
-echo "Pinging $FIP_ADDR for 120 seconds until it responds"
-timeout 120 bash -c "while true; do if ping -c1 -i1 $FIP_ADDR &>/dev/null; then echo 'Machine is up and running up'; break; fi; done"
+echo "Pinging $FIP_ADDR for up to 300 seconds until it responds"
+timeout 300 bash -c "while true; do if ping -c1 -i1 $FIP_ADDR &>/dev/null; then echo 'Machine is up and running up'; break; fi; done"
+
+echo "Wait up to 300 seconds for ssh to respond"
+timeout 300 bash -c "while true; do sleep 5; if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${FIP_ADDR} true; then echo 'SSH is open'; break; fi; done"
 
 echo "Changing the default DNS nameserver in the instance to 192.168.122.80"
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${FIP_ADDR} 'echo "nameserver 192.168.122.80" | sudo tee /etc/resolv.conf'
 
 if [[ -e ~/pull-secret ]]; then
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${FIP_ADDR} 'mkdir ~/.docker'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem cloud-user@${FIP_ADDR} 'mkdir ~/.docker || true'
     scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./${VM_NAME}.pem ~/pull-secret cloud-user@${FIP_ADDR}:~/.docker/config.json
 fi
 

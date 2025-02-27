@@ -1,0 +1,8 @@
+---
+- name: Delete RHELAI vm
+  ansible.builtin.shell:
+    chdir: ~/
+    cmd: |
+      source ~/oclogin && \
+      oc rsh openstackclient openstack server delete rhel-ai
+  changed_when: true
